@@ -86,7 +86,7 @@ func (z *Zoom) GetRegistrants(meetingId string) ([]Registrant, error) {
 	}
 
 	registrantData := data["registrants"].([]interface{})
-	registrants := make([]Registrant, len(registrantData))
+	registrants := make([]Registrant, 0, len(registrantData))
 
 	for _, registrant := range registrantData {
 		registrant := registrant.(map[string]interface{})
