@@ -48,11 +48,11 @@ outer:
 }
 
 func compare(registrant *zoom.Registrant, participant *tabbycat.Participant) bool {
-	if strings.ToLower(registrant.Email) == strings.ToLower(participant.Email) {
+	if strings.EqualFold(registrant.Email, participant.Email) {
 		return true
 	}
 
-	if strings.ToLower(registrant.Name) == strings.ToLower(participant.Name) {
+	if strings.EqualFold(registrant.Name, participant.Name) {
 		return true
 	}
 
