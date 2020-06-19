@@ -21,8 +21,8 @@ type Zoom struct {
 }
 
 type Registrant struct {
-	Email string
-	Name  string
+	Email string `json:"email"`
+	Name  string `json:"name"`
 }
 
 func New(apiKey string, apiSecret string) *Zoom {
