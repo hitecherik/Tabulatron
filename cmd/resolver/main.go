@@ -75,7 +75,7 @@ func main() {
 
 	verbose("Fetched %v adjudicators\n", len(adjudicators))
 
-	database := resolver.Resolve(&registrants, &teams, &adjudicators)
+	database := resolver.Resolve(registrants, teams, adjudicators)
 	raw, err := json.Marshal(database)
 	bail(err)
 	bail(ioutil.WriteFile(opts.zoomDb, raw, 0644))

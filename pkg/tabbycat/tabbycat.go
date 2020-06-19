@@ -20,6 +20,7 @@ type Team struct {
 
 type Participant struct {
 	Email string `json:"email"`
+	Id    int64  `json:"id"`
 	Name  string `json:"name"`
 }
 
