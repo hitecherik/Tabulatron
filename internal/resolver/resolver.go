@@ -9,12 +9,13 @@ import (
 )
 
 type Database struct {
-	Resolved map[string][]string `json:"resolved"`
-	Unknown  []zoom.Registrant   `json:"unknown"`
+	Teams   map[string][]string `json:"teams"`
+	Judges  map[string]string   `json:"judges"`
+	Unknown []zoom.Registrant   `json:"unknown"`
 }
 
 func Resolve(registrants []zoom.Registrant, teams []tabbycat.Team, adjudicators []tabbycat.Participant) Database {
-	database := Database{map[string][]string{}, []zoom.Registrant{}}
+	database := Database{map[string][]string{}, map[string]string{}, []zoom.Registrant{}}
 
 outer:
 	for _, registrant := range registrants {
@@ -23,11 +24,11 @@ outer:
 
 			for _, speaker := range team.Speakers {
 				if compare(&registrant, &speaker) {
-					if _, ok := database.Resolved[id]; !ok {
-						database.Resolved[id] = []string{}
+					if _, ok := database.Teams[id]; !ok {
+						database.Teams[id] = []string{}
 					}
 
-					database.Resolved[id] = append(database.Resolved[id], registrant.Email)
+					database.Teams[id] = append(database.Teams[id], registrant.Email)
 					continue outer
 				}
 			}
@@ -36,7 +37,7 @@ outer:
 		for _, judge := range adjudicators {
 			if compare(&registrant, &judge) {
 				id := fmt.Sprintf("%v", judge.Id)
-				database.Resolved[id] = []string{registrant.Email}
+				database.Judges[id] = registrant.Email
 				continue outer
 			}
 		}

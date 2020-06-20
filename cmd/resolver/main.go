@@ -20,7 +20,7 @@ type options struct {
 	tabbycatApiKey string
 	tabbycatUrl    string
 	tabbycatSlug   string
-	zoomDb         string
+	db             string
 	verbose        bool
 }
 
@@ -42,7 +42,7 @@ func init() {
 	var envFile string
 
 	flag.StringVar(&envFile, "env", ".env", "file to read environment variables from")
-	flag.StringVar(&opts.zoomDb, "db", "db.json", "JSON file to store zoom email information in")
+	flag.StringVar(&opts.db, "db", "db.json", "JSON file to store zoom email information in")
 	flag.BoolVar(&opts.verbose, "verbose", false, "print additional input")
 	flag.Parse()
 
@@ -78,5 +78,5 @@ func main() {
 	database := resolver.Resolve(registrants, teams, adjudicators)
 	raw, err := json.Marshal(database)
 	bail(err)
-	bail(ioutil.WriteFile(opts.zoomDb, raw, 0644))
+	bail(ioutil.WriteFile(opts.db, raw, 0644))
 }
