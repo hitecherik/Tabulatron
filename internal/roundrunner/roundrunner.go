@@ -7,13 +7,14 @@ import (
 	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
 )
 
-func Allocate(emails resolver.Database, rooms []tabbycat.Room) ([][]string, error) {
+func Allocate(emails resolver.Database, venues []tabbycat.Venue, rooms []tabbycat.Room) ([][]string, error) {
 	var allocations [][]string
 	var panellists [][]string
 
+	venueMap := buildVenueMap(venues)
+
 	for _, room := range rooms {
-		// TODO: actually get the room name
-		name := fmt.Sprintf("venue%v", room.VenueId)
+		name := venueMap[room.VenueId]
 
 		if email, ok := emails.Judges[room.ChairId]; ok {
 			allocations = append(allocations, []string{name, email})
@@ -35,4 +36,15 @@ func Allocate(emails resolver.Database, rooms []tabbycat.Room) ([][]string, erro
 	}
 
 	return append(allocations, panellists...), nil
+}
+
+func buildVenueMap(venues []tabbycat.Venue) map[string]string {
+	venueMap := make(map[string]string)
+
+	for _, venue := range venues {
+		id := fmt.Sprintf("%v", venue.Id)
+		venueMap[id] = venue.Name
+	}
+
+	return venueMap
 }

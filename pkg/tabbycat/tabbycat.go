@@ -17,13 +17,13 @@ type Tabbycat struct {
 }
 
 type Team struct {
-	Id       int64         `json:"id"`
+	Id       uint          `json:"id"`
 	Speakers []Participant `json:"speakers"`
 }
 
 type Participant struct {
 	Email string `json:"email"`
-	Id    int64  `json:"id"`
+	Id    uint   `json:"id"`
 	Name  string `json:"name"`
 }
 
@@ -32,6 +32,11 @@ type Room struct {
 	ChairId      string
 	TeamIds      []string
 	PanellistIds []string
+}
+
+type Venue struct {
+	Id   uint
+	Name string
 }
 
 type teamResponse struct {
@@ -55,26 +60,13 @@ func New(apiKey string, url string, slug string) *Tabbycat {
 }
 
 func (t *Tabbycat) GetAdjudicators() ([]Participant, error) {
-	req, err := http.NewRequest(http.MethodGet, t.endpoint+"adjudicators", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	t.authorize(req)
-	resp, err := t.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	response, err := t.makeRequest(http.MethodGet, "adjudicators")
 	if err != nil {
 		return nil, err
 	}
 
 	var adjudicators []Participant
-	if err := json.Unmarshal(body, &adjudicators); err != nil {
+	if err := json.Unmarshal(response, &adjudicators); err != nil {
 		return nil, err
 	}
 
@@ -82,26 +74,13 @@ func (t *Tabbycat) GetAdjudicators() ([]Participant, error) {
 }
 
 func (t *Tabbycat) GetTeams() ([]Team, error) {
-	req, err := http.NewRequest(http.MethodGet, t.endpoint+"teams", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	t.authorize(req)
-	resp, err := t.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	response, err := t.makeRequest(http.MethodGet, "teams")
 	if err != nil {
 		return nil, err
 	}
 
 	var teams []Team
-	if err := json.Unmarshal(body, &teams); err != nil {
+	if err := json.Unmarshal(response, &teams); err != nil {
 		return nil, err
 	}
 
@@ -109,26 +88,13 @@ func (t *Tabbycat) GetTeams() ([]Team, error) {
 }
 
 func (t *Tabbycat) GetRound(round uint) ([]Room, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%vrounds/%v/pairings", t.endpoint, round), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	t.authorize(req)
-	resp, err := t.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	response, err := t.makeRequest(http.MethodGet, fmt.Sprintf("rounds/%v/pairings", round))
 	if err != nil {
 		return nil, err
 	}
 
 	var data []teamResponse
-	if err := json.Unmarshal(body, &data); err != nil {
+	if err := json.Unmarshal(response, &data); err != nil {
 		return nil, err
 	}
 
@@ -175,8 +141,39 @@ func (t *Tabbycat) GetRound(round uint) ([]Room, error) {
 	return rooms, nil
 }
 
+func (t *Tabbycat) GetVenues() ([]Venue, error) {
+	response, err := t.makeRequest(http.MethodGet, "venues")
+	if err != nil {
+		return nil, err
+	}
+
+	var venues []Venue
+	if err := json.Unmarshal(response, &venues); err != nil {
+		return nil, err
+	}
+
+	return venues, nil
+}
+
 func (t *Tabbycat) authorize(req *http.Request) {
 	req.Header.Add("Authorization", fmt.Sprintf("Token %v", t.apiKey))
+}
+
+func (t *Tabbycat) makeRequest(method string, url string) ([]byte, error) {
+	req, err := http.NewRequest(method, t.endpoint+url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	t.authorize(req)
+	resp, err := t.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
 }
 
 func stripIdentifier(url string) (string, error) {

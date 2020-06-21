@@ -73,7 +73,12 @@ func main() {
 
 	verbose("Fetched %v pairings\n", len(rooms))
 
-	assignments, err := roundrunner.Allocate(database, rooms)
+	venues, err := tabbycat.GetVenues()
+	bail(err)
+
+	verbose("Fetched %v venues\n", len(venues))
+
+	assignments, err := roundrunner.Allocate(database, venues, rooms)
 	bail(err)
 
 	file, err := os.Create(opts.csv)
