@@ -16,7 +16,9 @@ func WriteCsv(out io.Writer, allocations [][]string) ([][]string, error) {
 		return nil, err
 	}
 
-	for _, allocation := range allocations[:maxAllocations] {
+	numAllocations := min(maxAllocations, len(allocations))
+
+	for _, allocation := range allocations[:numAllocations] {
 		if err := w.Write(allocation); err != nil {
 			return nil, err
 		}
@@ -24,5 +26,13 @@ func WriteCsv(out io.Writer, allocations [][]string) ([][]string, error) {
 
 	w.Flush()
 
-	return allocations[maxAllocations:], nil
+	return allocations[numAllocations:], nil
+}
+
+func min(x int, y int) int {
+	if x > y {
+		return y
+	}
+
+	return x
 }
