@@ -5,9 +5,10 @@ import (
 
 	"github.com/hitecherik/Imperial-Online-IV/internal/resolver"
 	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
+	"github.com/hitecherik/Imperial-Online-IV/pkg/zoom"
 )
 
-func Allocate(emails resolver.Database, venues []tabbycat.Venue, rooms []tabbycat.Room) ([][]string, error) {
+func Allocate(emails resolver.Database, venues []tabbycat.Venue, rooms []tabbycat.Room) [][]string {
 	var allocations [][]string
 	var panellists [][]string
 
@@ -35,7 +36,22 @@ func Allocate(emails resolver.Database, venues []tabbycat.Venue, rooms []tabbyca
 		}
 	}
 
-	return append(allocations, panellists...), nil
+	return append(allocations, panellists...)
+}
+
+func LeftoversToNames(leftovers [][]string, registrants []zoom.Registrant) [][]string {
+	registrantMap := buildRegistrantMap(registrants)
+	assignments := make([][]string, 0, len(leftovers))
+
+	for _, leftover := range leftovers {
+		if name, ok := registrantMap[leftover[1]]; ok {
+			assignments = append(assignments, []string{leftover[0], name})
+		} else {
+			assignments = append(assignments, leftover)
+		}
+	}
+
+	return assignments
 }
 
 func buildVenueMap(venues []tabbycat.Venue) map[string]string {
@@ -47,4 +63,14 @@ func buildVenueMap(venues []tabbycat.Venue) map[string]string {
 	}
 
 	return venueMap
+}
+
+func buildRegistrantMap(registrants []zoom.Registrant) map[string]string {
+	registrantMap := make(map[string]string)
+
+	for _, registrant := range registrants {
+		registrantMap[registrant.Email] = registrant.Name
+	}
+
+	return registrantMap
 }

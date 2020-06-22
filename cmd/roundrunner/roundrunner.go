@@ -18,6 +18,9 @@ type options struct {
 	round          uint
 	csv            string
 	db             string
+	zoomApiKey     string
+	zoomApiSecret  string
+	zoomMeetingId  string
 	tabbycatApiKey string
 	tabbycatUrl    string
 	tabbycatSlug   string
@@ -55,6 +58,9 @@ func init() {
 
 	bail(godotenv.Load(envFile))
 
+	opts.zoomApiKey = os.Getenv("ZOOM_API_KEY")
+	opts.zoomApiSecret = os.Getenv("ZOOM_API_SECRET")
+	opts.zoomMeetingId = os.Getenv("ZOOM_MEETING_ID")
 	opts.tabbycatApiKey = os.Getenv("TABBYCAT_API_KEY")
 	opts.tabbycatUrl = os.Getenv("TABBYCAT_URL")
 	opts.tabbycatSlug = os.Getenv("TABBYCAT_SLUG")
@@ -78,15 +84,27 @@ func main() {
 
 	verbose("Fetched %v venues\n", len(venues))
 
-	assignments, err := roundrunner.Allocate(database, venues, rooms)
-	bail(err)
+	assignments := roundrunner.Allocate(database, venues, rooms)
 
 	file, err := os.Create(opts.csv)
 	bail(err)
 	defer file.Close()
 
-	leftover, err := zoom.WriteCsv(file, assignments)
+	leftovers, err := zoom.WriteCsv(file, assignments)
 	bail(err)
 
-	verbose("%v assignments leftover\n", len(leftover))
+	if len(leftovers) > 0 {
+		verbose("%v assignments leftover\n", len(leftovers))
+
+		zoom := zoom.New(opts.zoomApiKey, opts.zoomApiSecret)
+		registrants, err := zoom.GetRegistrants(opts.zoomMeetingId)
+		bail(err)
+
+		assignments := roundrunner.LeftoversToNames(leftovers, registrants)
+		fmt.Println("Please manually perform the following breakout room assignments:")
+
+		for _, assignment := range assignments {
+			fmt.Printf("%v -> %v\n", assignment[1], assignment[0])
+		}
+	}
 }
