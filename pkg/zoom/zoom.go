@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"gopkg.in/square/go-jose.v2"
@@ -96,9 +97,19 @@ func (z *Zoom) GetRegistrants(meetingId string) ([]Registrant, error) {
 	registrants := make([]Registrant, 0, len(data.Registrants))
 
 	for _, registrant := range data.Registrants {
+		nameComponents := make([]string, 0, 2)
+
+		if registrant.FirstName != "" {
+			nameComponents = append(nameComponents, registrant.FirstName)
+		}
+
+		if registrant.LastName != "" {
+			nameComponents = append(nameComponents, registrant.LastName)
+		}
+
 		registrants = append(registrants, Registrant{
 			Email: registrant.Email,
-			Name:  fmt.Sprintf("%v %v", registrant.FirstName, registrant.LastName),
+			Name:  strings.Join(nameComponents, " "),
 		})
 	}
 
