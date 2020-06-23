@@ -25,6 +25,14 @@ type Registrant struct {
 	Name  string `json:"name"`
 }
 
+type registrantResponse struct {
+	Registrants []struct {
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Email     string
+	}
+}
+
 func New(apiKey string, apiSecret string) *Zoom {
 	return &Zoom{apiKey, apiSecret, &http.Client{}}
 }
@@ -80,23 +88,17 @@ func (z *Zoom) GetRegistrants(meetingId string) ([]Registrant, error) {
 		return nil, err
 	}
 
-	var data map[string]interface{}
+	var data registrantResponse
 	if err := json.Unmarshal(body, &data); err != nil {
 		return nil, err
 	}
 
-	registrantData := data["registrants"].([]interface{})
-	registrants := make([]Registrant, 0, len(registrantData))
+	registrants := make([]Registrant, 0, len(data.Registrants))
 
-	for _, registrant := range registrantData {
-		registrant := registrant.(map[string]interface{})
-		firstName := registrant["first_name"].(string)
-		lastName := registrant["last_name"].(string)
-		email := registrant["email"].(string)
-
+	for _, registrant := range data.Registrants {
 		registrants = append(registrants, Registrant{
-			Email: email,
-			Name:  fmt.Sprintf("%v %v", firstName, lastName),
+			Email: registrant.Email,
+			Name:  fmt.Sprintf("%v %v", registrant.FirstName, registrant.LastName),
 		})
 	}
 
