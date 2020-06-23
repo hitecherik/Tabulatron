@@ -14,6 +14,7 @@ import (
 
 const expiryAfter time.Duration = 30 * time.Second
 const endpoint string = "https://api.zoom.us/v2/meetings/%v/registrants"
+const maxPageSize int = 300
 
 type Zoom struct {
 	apiKey    string
@@ -32,6 +33,7 @@ type registrantResponse struct {
 		LastName  string `json:"last_name"`
 		Email     string
 	}
+	PageCount int `json:"page_count"`
 }
 
 func New(apiKey string, apiSecret string) *Zoom {
@@ -65,32 +67,8 @@ func (z *Zoom) GetToken() (string, error) {
 }
 
 func (z *Zoom) GetRegistrants(meetingId string) ([]Registrant, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(endpoint, meetingId), nil)
+	data, err := z.retrievePaginatedRegistrants(meetingId)
 	if err != nil {
-		return nil, err
-	}
-
-	token, err := z.GetToken()
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", token))
-
-	resp, err := z.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var data registrantResponse
-	if err := json.Unmarshal(body, &data); err != nil {
 		return nil, err
 	}
 
@@ -114,4 +92,55 @@ func (z *Zoom) GetRegistrants(meetingId string) ([]Registrant, error) {
 	}
 
 	return registrants, nil
+}
+
+func (z *Zoom) retrievePaginatedRegistrants(meetingId string) (registrantResponse, error) {
+	pageCount := 1
+	responses := make([]registrantResponse, 0, pageCount)
+
+	for pageNumber := 1; pageNumber <= pageCount; pageNumber++ {
+		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(endpoint, meetingId), nil)
+		if err != nil {
+			return registrantResponse{}, err
+		}
+
+		token, err := z.GetToken()
+		if err != nil {
+			return registrantResponse{}, err
+		}
+
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", token))
+
+		q := req.URL.Query()
+		q.Add("page_size", fmt.Sprintf("%v", maxPageSize))
+		q.Add("page_number", fmt.Sprintf("%v", pageNumber))
+		req.URL.RawQuery = q.Encode()
+
+		resp, err := z.client.Do(req)
+		if err != nil {
+			return registrantResponse{}, err
+		}
+
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return registrantResponse{}, err
+		}
+
+		var data registrantResponse
+		if err := json.Unmarshal(body, &data); err != nil {
+			return registrantResponse{}, err
+		}
+
+		pageCount = data.PageCount
+		responses = append(responses, data)
+	}
+
+	response := responses[0]
+	for _, data := range responses[1:] {
+		response.Registrants = append(response.Registrants, data.Registrants...)
+	}
+
+	return response, nil
 }
