@@ -106,7 +106,7 @@ func (t *Tabbycat) GetRounds() ([]Round, error) {
 	return rounds, nil
 }
 
-func (t *Tabbycat) GetRound(round uint) ([]Room, error) {
+func (t *Tabbycat) GetRound(round uint64) ([]Room, error) {
 	response, err := t.makeRequest(http.MethodGet, fmt.Sprintf("rounds/%v/pairings", round))
 	if err != nil {
 		return nil, err

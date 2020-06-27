@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/hitecherik/Imperial-Online-IV/internal/resolver"
 	"github.com/hitecherik/Imperial-Online-IV/internal/roundrunner"
@@ -14,8 +16,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type rounds []uint64
+
 type options struct {
-	round          uint
+	round          rounds
 	csv            string
 	db             string
 	zoomApiKey     string
@@ -45,13 +49,13 @@ func init() {
 	var envFile string
 
 	flag.StringVar(&envFile, "env", ".env", "file to read environment variables from")
-	flag.UintVar(&opts.round, "round", 0, "the round to run")
+	flag.Var(&opts.round, "round", "the round to run")
 	flag.StringVar(&opts.csv, "csv", "round.csv", "CSV file to allocate breakout rooms in")
 	flag.StringVar(&opts.db, "db", "db.json", "JSON file to store zoom email information in")
 	flag.BoolVar(&opts.verbose, "verbose", false, "print additional input")
 	flag.Parse()
 
-	if opts.round == 0 {
+	if len(opts.round) == 0 {
 		fmt.Fprintln(os.Stderr, "please specify a round")
 		os.Exit(2)
 	}
@@ -73,9 +77,14 @@ func main() {
 	var database resolver.Database
 	bail(json.Unmarshal(rawDatabase, &database))
 
+	var rooms []tabbycat.Room
 	tabbycat := tabbycat.New(opts.tabbycatApiKey, opts.tabbycatUrl, opts.tabbycatSlug)
-	rooms, err := tabbycat.GetRound(opts.round)
-	bail(err)
+
+	for _, round := range opts.round {
+		r, err := tabbycat.GetRound(round)
+		bail(err)
+		rooms = append(rooms, r...)
+	}
 
 	verbose("Fetched %v pairings\n", len(rooms))
 
@@ -107,4 +116,24 @@ func main() {
 			fmt.Printf("%v -> %v\n", assignment[1], assignment[0])
 		}
 	}
+}
+
+func (rs *rounds) String() string {
+	ids := make([]string, 0, len(*rs))
+
+	for _, r := range *rs {
+		ids = append(ids, fmt.Sprintf("%v", r))
+	}
+
+	return strings.Join(ids, ",")
+}
+
+func (r *rounds) Set(s string) error {
+	round, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	*r = append(*r, round)
+	return nil
 }
