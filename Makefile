@@ -1,6 +1,6 @@
 GO = go
 BINDIR = /usr/local/bin
-ALL = resolver roundrunner dummyresolver zoomregistrants
+ALL = resolver roundrunner dummyresolver tabbycatrounds zoomregistrants
 LIBRARIES = $(shell find internal pkg -type f -iname '*.go')
 
 all: $(ALL)
@@ -21,10 +21,13 @@ resolver: cmd/resolver/resolver.go $(LIBRARIES)
 roundrunner: cmd/roundrunner/roundrunner.go $(LIBRARIES)
 	$(GO) build -o $@ $<
 
-dummyresolver: %: tools/dummyresolver/dummyresolver.go $(LIBRARIES)
+dummyresolver: tools/dummyresolver/dummyresolver.go $(LIBRARIES)
 	$(GO) build -o $@ $<
 
-zoomregistrants: %: tools/zoomregistrants/zoomregistrants.go $(LIBRARIES)
+tabbycatrounds: tools/tabbycatrounds/tabbycatrounds.go $(LIBRARIES)
+	$(GO) build -o $@ $<
+
+zoomregistrants: tools/zoomregistrants/zoomregistrants.go $(LIBRARIES)
 	$(GO) build -o $@ $<
 
 .PHONY: all install uninstall clean

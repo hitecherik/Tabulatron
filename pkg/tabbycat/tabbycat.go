@@ -34,6 +34,11 @@ type Room struct {
 	PanellistIds []string
 }
 
+type Round struct {
+	Id   uint
+	Name string
+}
+
 type Venue struct {
 	Id   uint
 	Name string
@@ -85,6 +90,20 @@ func (t *Tabbycat) GetTeams() ([]Team, error) {
 	}
 
 	return teams, nil
+}
+
+func (t *Tabbycat) GetRounds() ([]Round, error) {
+	response, err := t.makeRequest(http.MethodGet, "rounds")
+	if err != nil {
+		return nil, err
+	}
+
+	var rounds []Round
+	if err := json.Unmarshal(response, &rounds); err != nil {
+		return nil, err
+	}
+
+	return rounds, nil
 }
 
 func (t *Tabbycat) GetRound(round uint) ([]Room, error) {
