@@ -56,7 +56,7 @@ func main() {
 	table.SetHeader([]string{"ID", "Name"})
 
 	for _, round := range rounds {
-		table.Append([]string{fmt.Sprintf("%v", round.Id), round.Name})
+		table.Append([]string{round.Id, round.Name})
 	}
 
 	table.Render()

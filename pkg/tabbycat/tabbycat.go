@@ -35,7 +35,7 @@ type Room struct {
 }
 
 type Round struct {
-	Id   uint
+	Id   string
 	Name string
 }
 
@@ -54,6 +54,11 @@ type teamResponse struct {
 		Team string
 	}
 	Venue string
+}
+
+type roundResponse struct {
+	Url  string
+	Name string
 }
 
 func New(apiKey string, url string, slug string) *Tabbycat {
@@ -98,9 +103,20 @@ func (t *Tabbycat) GetRounds() ([]Round, error) {
 		return nil, err
 	}
 
-	var rounds []Round
-	if err := json.Unmarshal(response, &rounds); err != nil {
+	var responses []roundResponse
+	if err := json.Unmarshal(response, &responses); err != nil {
 		return nil, err
+	}
+
+	rounds := make([]Round, 0, len(responses))
+	for _, response := range responses {
+		id, err := stripIdentifier(response.Url)
+
+		if err != nil {
+			return nil, err
+		}
+
+		rounds = append(rounds, Round{id, response.Name})
 	}
 
 	return rounds, nil

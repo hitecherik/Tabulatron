@@ -93,7 +93,7 @@ Usage of ./roundrunner:
       print additional input
 ```
 
-The `-round` flag takes the id of the round that is in the URL in the tabbycat admin interface, and _not_ tabbycat's internal round ID. Unless you've set tabbycat up weirdly, `-round 1` should correspond to round 1, `-round 2` to round 2, and so on.
+The `-round` flag takes the ID of the round that is in the URL in the tabbycat admin interface, and _not_ tabbycat's internal round ID. You can check what the round ID for the round you want to run is using `tabbycatrounds` (see below).
 
 If you're generating for multiple rounds (hint: concurrent outrounds) then the round flag can be passed multiple times (e.g.: `-round 7 -round 8`).
 
@@ -113,7 +113,7 @@ Usage of ./zoomregistrants:
 
 ### `tabbycatrounds`
 
-This is another utility script that prints out each round's name and the internal tabbycat ID for that round. This was for before I realised that the internal ID doesn't correspond to the ID that needs to be passed to `roundrunner`, so this script is mostly useless.
+A utility script for checking what to pass to `roundrunner`'s `-round` argument for a certain round.
 
 ```
 Usage of ./tabbycatrounds:
@@ -129,7 +129,6 @@ This was mostly built in one weekend, so the feature set is quite limited. In fu
 
 - Reduce some of the duplication in the code by cleaning up the structure.
 - Add various integrations with Discord, the chief of which should be automatic registration.
-- Fix `tabbycatrounds` so that it displays the round IDs that `roundrunner` takes as arguments.
 - Add support for multiple CSVs for multiple Zoom calls.
 - Find a cooler name for this project.
 
