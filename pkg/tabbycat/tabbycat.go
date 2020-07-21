@@ -32,6 +32,7 @@ type Room struct {
 	ChairId      string
 	TeamIds      []string
 	PanellistIds []string
+	TraineeIds   []string
 }
 
 type Round struct {
@@ -111,7 +112,6 @@ func (t *Tabbycat) GetRounds() ([]Round, error) {
 	rounds := make([]Round, 0, len(responses))
 	for _, response := range responses {
 		id, err := stripIdentifier(response.Url)
-
 		if err != nil {
 			return nil, err
 		}
@@ -145,14 +145,14 @@ func (t *Tabbycat) GetRound(round uint64) ([]Room, error) {
 			return nil, err
 		}
 
-		panellistIds := make([]string, 0, len(datum.Adjudicators.Panellists)+len(datum.Adjudicators.Trainees))
-		for _, judge := range append(datum.Adjudicators.Panellists, datum.Adjudicators.Trainees...) {
-			id, err := stripIdentifier(judge)
-			if err != nil {
-				return nil, err
-			}
+		panellistIds, err := stripIdentifiers(datum.Adjudicators.Panellists)
+		if err != nil {
+			return nil, err
+		}
 
-			panellistIds = append(panellistIds, id)
+		traineeIds, err := stripIdentifiers(datum.Adjudicators.Trainees)
+		if err != nil {
+			return nil, err
 		}
 
 		teamIds := make([]string, 0, len(datum.Teams))
@@ -170,6 +170,7 @@ func (t *Tabbycat) GetRound(round uint64) ([]Room, error) {
 			ChairId:      chairId,
 			TeamIds:      teamIds,
 			PanellistIds: panellistIds,
+			TraineeIds:   traineeIds,
 		})
 	}
 
@@ -219,4 +220,19 @@ func stripIdentifier(url string) (string, error) {
 	}
 
 	return string(matches[1]), nil
+}
+
+func stripIdentifiers(urls []string) ([]string, error) {
+	ids := make([]string, 0, len(urls))
+
+	for _, url := range urls {
+		id, err := stripIdentifier(url)
+		if err != nil {
+			return nil, err
+		}
+
+		ids = append(ids, id)
+	}
+
+	return ids, nil
 }

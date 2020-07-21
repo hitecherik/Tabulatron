@@ -11,6 +11,7 @@ import (
 func Allocate(emails resolver.Database, venues []tabbycat.Venue, rooms []tabbycat.Room) [][]string {
 	var allocations [][]string
 	var panellists [][]string
+	var trainees [][]string
 
 	venueMap := buildVenueMap(venues)
 
@@ -34,9 +35,15 @@ func Allocate(emails resolver.Database, venues []tabbycat.Venue, rooms []tabbyca
 				panellists = append(panellists, []string{name, email})
 			}
 		}
+
+		for _, trainee := range room.TraineeIds {
+			if email, ok := emails.Judges[trainee]; ok {
+				trainees = append(trainees, []string{name, email})
+			}
+		}
 	}
 
-	return append(allocations, panellists...)
+	return append(allocations, append(panellists, trainees...)...)
 }
 
 func LeftoversToNames(leftovers [][]string, registrants []zoom.Registrant) [][]string {
