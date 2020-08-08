@@ -18,13 +18,15 @@ type Tabbycat struct {
 
 type Team struct {
 	Id       uint          `json:"id"`
+	Emoji    string        `json:"emoji"`
 	Speakers []Participant `json:"speakers"`
 }
 
 type Participant struct {
-	Email string `json:"email"`
-	Id    uint   `json:"id"`
-	Name  string `json:"name"`
+	Email   string `json:"email"`
+	Id      uint   `json:"id"`
+	Name    string `json:"name"`
+	Barcode string
 }
 
 type Room struct {
@@ -81,6 +83,10 @@ func (t *Tabbycat) GetAdjudicators() ([]Participant, error) {
 		return nil, err
 	}
 
+	if err := t.GetBarcodes(false, adjudicators); err != nil {
+		return nil, err
+	}
+
 	return adjudicators, nil
 }
 
@@ -95,7 +101,36 @@ func (t *Tabbycat) GetTeams() ([]Team, error) {
 		return nil, err
 	}
 
+	for i := range teams {
+		if err := t.GetBarcodes(true, teams[i].Speakers); err != nil {
+			return nil, err
+		}
+	}
+
 	return teams, nil
+}
+
+func (t *Tabbycat) GetBarcodes(speaker bool, participants []Participant) error {
+	category := "adjudicators"
+	if speaker {
+		category = "speakers"
+	}
+
+	for i := range participants {
+		raw, err := t.makeRequest(http.MethodGet, fmt.Sprintf("%v/%v/checkin", category, participants[i].Id))
+		if err != nil {
+			return err
+		}
+
+		var barcode struct{ Barcode string }
+		if err := json.Unmarshal(raw, &barcode); err != nil {
+			return err
+		}
+
+		participants[i].Barcode = barcode.Barcode
+	}
+
+	return nil
 }
 
 func (t *Tabbycat) GetRounds() ([]Round, error) {
