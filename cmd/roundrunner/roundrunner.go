@@ -1,19 +1,18 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 
-	"github.com/hitecherik/Imperial-Online-IV/internal/resolver"
+	"github.com/hitecherik/Imperial-Online-IV/internal/db"
 	"github.com/hitecherik/Imperial-Online-IV/internal/roundrunner"
 	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
 	"github.com/hitecherik/Imperial-Online-IV/pkg/zoom"
 	"github.com/joho/godotenv"
+	"github.com/olekukonko/tablewriter"
 )
 
 type rounds []uint64
@@ -21,10 +20,7 @@ type rounds []uint64
 type options struct {
 	round          rounds
 	csv            string
-	db             string
-	zoomApiKey     string
-	zoomApiSecret  string
-	zoomMeetingId  string
+	db             db.Database
 	tabbycatApiKey string
 	tabbycatUrl    string
 	tabbycatSlug   string
@@ -49,34 +45,27 @@ func init() {
 	var envFile string
 
 	flag.StringVar(&envFile, "env", ".env", "file to read environment variables from")
-	flag.Var(&opts.round, "round", "the round to run")
+	flag.Var(&opts.round, "round", "a round to run")
 	flag.StringVar(&opts.csv, "csv", "round.csv", "CSV file to allocate breakout rooms in")
-	flag.StringVar(&opts.db, "db", "db.json", "JSON file to store zoom email information in")
+	flag.Var(&opts.db, "db", "SQLite3 database representing the tournament")
 	flag.BoolVar(&opts.verbose, "verbose", false, "print additional input")
 	flag.Parse()
 
 	if len(opts.round) == 0 {
-		fmt.Fprintln(os.Stderr, "please specify a round")
+		fmt.Fprintln(os.Stderr, "please specify at least one round")
 		os.Exit(2)
 	}
 
 	bail(godotenv.Load(envFile))
 
-	opts.zoomApiKey = os.Getenv("ZOOM_API_KEY")
-	opts.zoomApiSecret = os.Getenv("ZOOM_API_SECRET")
-	opts.zoomMeetingId = os.Getenv("ZOOM_MEETING_ID")
 	opts.tabbycatApiKey = os.Getenv("TABBYCAT_API_KEY")
 	opts.tabbycatUrl = os.Getenv("TABBYCAT_URL")
 	opts.tabbycatSlug = os.Getenv("TABBYCAT_SLUG")
+
+	bail(opts.db.SetIfNotExists(fmt.Sprintf("%v.db", opts.tabbycatSlug)))
 }
 
 func main() {
-	rawDatabase, err := ioutil.ReadFile(opts.db)
-	bail(err)
-
-	var database resolver.Database
-	bail(json.Unmarshal(rawDatabase, &database))
-
 	var rooms []tabbycat.Room
 	tabbycat := tabbycat.New(opts.tabbycatApiKey, opts.tabbycatUrl, opts.tabbycatSlug)
 
@@ -93,7 +82,8 @@ func main() {
 
 	verbose("Fetched %v venues\n", len(venues))
 
-	assignments := roundrunner.Allocate(database, venues, rooms)
+	assignments, err := roundrunner.Allocate(opts.db, venues, rooms)
+	bail(err)
 
 	file, err := os.Create(opts.csv)
 	bail(err)
@@ -105,16 +95,19 @@ func main() {
 	if len(leftovers) > 0 {
 		verbose("%v assignments leftover\n", len(leftovers))
 
-		zoom := zoom.New(opts.zoomApiKey, opts.zoomApiSecret)
-		registrants, err := zoom.GetRegistrants(opts.zoomMeetingId)
+		assignments, err := roundrunner.LeftoversToNames(opts.db, leftovers)
 		bail(err)
 
-		assignments := roundrunner.LeftoversToNames(leftovers, registrants)
 		fmt.Println("Please manually perform the following breakout room assignments:")
 
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader([]string{"Name", "Room"})
+
 		for _, assignment := range assignments {
-			fmt.Printf("%v -> %v\n", assignment[1], assignment[0])
+			table.Append(assignment)
 		}
+
+		table.Render()
 	}
 }
 

@@ -3,12 +3,11 @@ package roundrunner
 import (
 	"fmt"
 
-	"github.com/hitecherik/Imperial-Online-IV/internal/resolver"
+	"github.com/hitecherik/Imperial-Online-IV/internal/db"
 	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
-	"github.com/hitecherik/Imperial-Online-IV/pkg/zoom"
 )
 
-func Allocate(emails resolver.Database, venues []tabbycat.Venue, rooms []tabbycat.Room) [][]string {
+func Allocate(database db.Database, venues []tabbycat.Venue, rooms []tabbycat.Room) ([][]string, error) {
 	var allocations [][]string
 	var panellists [][]string
 	var trainees [][]string
@@ -18,47 +17,47 @@ func Allocate(emails resolver.Database, venues []tabbycat.Venue, rooms []tabbyca
 	for _, room := range rooms {
 		name := venueMap[room.VenueId]
 
-		if email, ok := emails.Judges[room.ChairId]; ok {
-			allocations = append(allocations, []string{name, email})
+		if emails, err := database.ParticipantEmails([]string{room.ChairId}); err == nil && len(emails) != 0 {
+			allocations = append(allocations, []string{name, emails[0]})
+		} else if err != nil {
+			return nil, err
 		}
 
-		for _, team := range room.TeamIds {
-			if speakers, ok := emails.Teams[team]; ok {
-				for _, speaker := range speakers {
-					allocations = append(allocations, []string{name, speaker})
-				}
-			}
+		if emails, err := database.TeamEmails(room.TeamIds); err == nil && len(emails) != 0 {
+			allocations = appendEmails(allocations, name, emails)
+		} else if err != nil {
+			return nil, err
 		}
 
-		for _, panellist := range room.PanellistIds {
-			if email, ok := emails.Judges[panellist]; ok {
-				panellists = append(panellists, []string{name, email})
-			}
+		if emails, err := database.ParticipantEmails(room.PanellistIds); err == nil && len(emails) != 0 {
+			panellists = appendEmails(panellists, name, emails)
+		} else if err != nil {
+			return nil, err
 		}
 
-		for _, trainee := range room.TraineeIds {
-			if email, ok := emails.Judges[trainee]; ok {
-				trainees = append(trainees, []string{name, email})
-			}
+		if emails, err := database.ParticipantEmails(room.TraineeIds); err == nil && len(emails) != 0 {
+			trainees = appendEmails(trainees, name, emails)
+		} else if err != nil {
+			return nil, err
 		}
 	}
 
-	return append(allocations, append(panellists, trainees...)...)
+	return append(allocations, append(panellists, trainees...)...), nil
 }
 
-func LeftoversToNames(leftovers [][]string, registrants []zoom.Registrant) [][]string {
-	registrantMap := buildRegistrantMap(registrants)
+func LeftoversToNames(database db.Database, leftovers [][]string) ([][]string, error) {
 	assignments := make([][]string, 0, len(leftovers))
 
 	for _, leftover := range leftovers {
-		if name, ok := registrantMap[leftover[1]]; ok {
-			assignments = append(assignments, []string{leftover[0], name})
-		} else {
-			assignments = append(assignments, leftover)
+		name, err := database.ParticipantNameFromEmail(leftover[1])
+		if err != nil {
+			return nil, err
 		}
+
+		assignments = append(assignments, []string{leftover[0], name})
 	}
 
-	return assignments
+	return assignments, nil
 }
 
 func buildVenueMap(venues []tabbycat.Venue) map[string]string {
@@ -72,12 +71,10 @@ func buildVenueMap(venues []tabbycat.Venue) map[string]string {
 	return venueMap
 }
 
-func buildRegistrantMap(registrants []zoom.Registrant) map[string]string {
-	registrantMap := make(map[string]string)
-
-	for _, registrant := range registrants {
-		registrantMap[registrant.Email] = registrant.Name
+func appendEmails(allocations [][]string, name string, emails []string) [][]string {
+	for _, email := range emails {
+		allocations = append(allocations, []string{name, email})
 	}
 
-	return registrantMap
+	return allocations
 }

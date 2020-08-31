@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
 	_ "github.com/mattn/go-sqlite3"
@@ -24,7 +25,7 @@ func New(file string) (*Database, error) {
 			id INTEGER NOT NULL PRIMARY KEY,
 			barcode TEXT NOT NULL UNIQUE,
 			name TEXT NOT NULL,
-			email TEXT,
+			email TEXT KEY,
 			type TEXT NOT NULL,
 			discord TEXT KEY
 		);
@@ -160,6 +161,43 @@ func (d *Database) ParticipantFromBarcode(barcode string, discord string) (uint,
 	return id, name, category == "speaker", nil
 }
 
+func (d *Database) ParticipantNameFromEmail(email string) (string, error) {
+	query := `
+		SELECT name
+		FROM participants
+		WHERE email = ?
+		LIMIT 1
+	`
+
+	row := d.db.QueryRow(query, email)
+	var name string
+	if err := row.Scan(&name); err != nil {
+		return "", err
+	}
+
+	return name, nil
+}
+
+func (d *Database) TeamEmails(teams []string) ([]string, error) {
+	query := fmt.Sprintf(`
+		SELECT email
+		FROM participants p JOIN teams t ON (p.id=t.participant)
+		WHERE t.id IN (%v)
+	`, strings.Join(teams, ","))
+
+	return d.emailsQuery(query)
+}
+
+func (d *Database) ParticipantEmails(participants []string) ([]string, error) {
+	query := fmt.Sprintf(`
+		SELECT email
+		FROM participants
+		WHERE id IN (%v)
+	`, strings.Join(participants, ","))
+
+	return d.emailsQuery(query)
+}
+
 func (d *Database) Close() error {
 	return d.db.Close()
 }
@@ -184,4 +222,25 @@ func (d *Database) SetIfNotExists(value string) error {
 
 func (d *Database) String() string {
 	return d.file
+}
+
+func (d *Database) emailsQuery(query string) ([]string, error) {
+	rows, err := d.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	emails := make([]string, 0)
+
+	for rows.Next() {
+		var email string
+		if err := rows.Scan(&email); err != nil {
+			return nil, err
+		}
+
+		emails = append(emails, email)
+	}
+
+	return emails, nil
 }
