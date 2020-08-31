@@ -110,7 +110,6 @@ func (d *Database) UpdateDiscordId(barcode string, discordId string) (bool, erro
 		UPDATE participants
 		SET discord = ?
 		WHERE barcode = ?
-		LIMIT 1;
 	`
 
 	result, err := d.db.Exec(query, discordId, barcode)
@@ -128,6 +127,37 @@ func (d *Database) UpdateDiscordId(barcode string, discordId string) (bool, erro
 	}
 
 	return true, nil
+}
+
+func (d *Database) ParticipantFromBarcode(barcode string, discord string) (uint, string, bool, error) {
+	query := `
+		SELECT p.id, "[" || COALESCE(emoji, "J")  || "] " || name, type
+		FROM participants p LEFT JOIN teams t ON (p.id=t.participant)
+		WHERE barcode = ?
+		AND discord IS NULL
+		AND (SELECT COUNT(*) FROM participants WHERE discord = ?) = 0
+	`
+
+	row := d.db.QueryRow(query, barcode, discord)
+	var (
+		id       uint
+		name     string
+		category string
+	)
+	if err := row.Scan(&id, &name, &category); err != nil {
+		return 0, "", false, err
+	}
+
+	query = `
+		UPDATE participants
+		SET discord = ?
+		WHERE id = ?
+	`
+	if _, err := d.db.Exec(query, discord, id); err != nil {
+		return 0, "", false, err
+	}
+
+	return id, name, category == "speaker", nil
 }
 
 func (d *Database) Close() error {

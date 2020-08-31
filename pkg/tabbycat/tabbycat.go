@@ -110,9 +110,9 @@ func (t *Tabbycat) GetTeams() ([]Team, error) {
 	return teams, nil
 }
 
-func (t *Tabbycat) GetBarcodes(speaker bool, participants []Participant) error {
+func (t *Tabbycat) GetBarcodes(speakers bool, participants []Participant) error {
 	category := "adjudicators"
-	if speaker {
+	if speakers {
 		category = "speakers"
 	}
 
