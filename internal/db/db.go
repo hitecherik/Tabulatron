@@ -161,6 +161,25 @@ func (d *Database) ParticipantFromBarcode(barcode string, discord string) (uint,
 	return id, name, category == "speaker", nil
 }
 
+func (d *Database) ParticipantFromDiscord(discord string) (uint, bool, error) {
+	query := `
+		SELECT id, type
+		FROM participants
+		WHERE discord = ?
+	`
+
+	row := d.db.QueryRow(query, discord)
+	var (
+		id       uint
+		category string
+	)
+	if err := row.Scan(&id, &category); err != nil {
+		return 0, false, err
+	}
+
+	return id, category == "speaker", nil
+}
+
 func (d *Database) ParticipantNameFromEmail(email string) (string, error) {
 	query := `
 		SELECT name

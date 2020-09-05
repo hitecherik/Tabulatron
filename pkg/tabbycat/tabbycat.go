@@ -226,6 +226,16 @@ func (t *Tabbycat) GetVenues() ([]Venue, error) {
 	return venues, nil
 }
 
+func (t *Tabbycat) CheckIn(id uint, speaker bool) error {
+	category := "adjudicators"
+	if speaker {
+		category = "speakers"
+	}
+
+	_, err := t.makeRequest(http.MethodPut, fmt.Sprintf("%v/%v/checkin", category, id))
+	return err
+}
+
 func (t *Tabbycat) authorize(req *http.Request) {
 	req.Header.Add("Authorization", fmt.Sprintf("Token %v", t.apiKey))
 }
