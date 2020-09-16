@@ -4,21 +4,18 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 
 	"github.com/hitecherik/Imperial-Online-IV/internal/db"
 	"github.com/hitecherik/Imperial-Online-IV/internal/roundrunner"
+	"github.com/hitecherik/Imperial-Online-IV/internal/rounds"
 	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
 	"github.com/hitecherik/Imperial-Online-IV/pkg/zoom"
 	"github.com/joho/godotenv"
 	"github.com/olekukonko/tablewriter"
 )
 
-type rounds []uint64
-
 type options struct {
-	round          rounds
+	round          rounds.Rounds
 	csv            string
 	db             db.Database
 	tabbycatApiKey string
@@ -109,24 +106,4 @@ func main() {
 
 		table.Render()
 	}
-}
-
-func (rs *rounds) String() string {
-	ids := make([]string, 0, len(*rs))
-
-	for _, r := range *rs {
-		ids = append(ids, fmt.Sprintf("%v", r))
-	}
-
-	return strings.Join(ids, ",")
-}
-
-func (r *rounds) Set(s string) error {
-	round, err := strconv.ParseUint(s, 10, 64)
-	if err != nil {
-		return err
-	}
-
-	*r = append(*r, round)
-	return nil
 }

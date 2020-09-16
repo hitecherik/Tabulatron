@@ -21,11 +21,12 @@ func panic(err error) {
 }
 
 type options struct {
-	db             db.Database
-	tabbycatApiKey string
-	tabbycatUrl    string
-	tabbycatSlug   string
-	botToken       string
+	db              db.Database
+	tabbycatApiKey  string
+	tabbycatUrl     string
+	tabbycatSlug    string
+	botToken        string
+	helperBotTokens []string
 }
 
 var opts options
@@ -44,10 +45,27 @@ func init() {
 	opts.tabbycatSlug = os.Getenv("TABBYCAT_SLUG")
 	opts.botToken = os.Getenv("DISCORD_BOT_TOKEN")
 
+	for i := 1; true; i++ {
+		token := os.Getenv(fmt.Sprintf("DISCORD_HELPER_%v", i))
+
+		if token == "" {
+			break
+		}
+
+		opts.helperBotTokens = append(opts.helperBotTokens, token)
+	}
+
 	panic(opts.db.SetIfNotExists(fmt.Sprintf("%v.db", os.Getenv("TABBYCAT_SLUG"))))
 }
 
 func main() {
+	for _, token := range opts.helperBotTokens {
+		helperClient := disgord.New(disgord.Config{
+			BotToken: token,
+		})
+		go helperClient.StayConnectedUntilInterrupted(context.Background())
+	}
+
 	client := disgord.New(disgord.Config{
 		BotToken: opts.botToken,
 	})

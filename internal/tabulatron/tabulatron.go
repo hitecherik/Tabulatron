@@ -37,7 +37,7 @@ func (t *Tabulatron) HandleMessage(s disgord.Session, evt *disgord.MessageCreate
 		}
 	}
 
-	log.Printf("could not find handler for message '%v' from '%v'", evt.Message.Content, evt.Message.Member.Nick)
+	log.Printf("could not find handler for message '%v' from '%v'", evt.Message.Content, evt.Message.Author.Username)
 }
 
 func (t *Tabulatron) ReplyMessage(message *disgord.Message, reply string, a ...interface{}) *disgord.Message {

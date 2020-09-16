@@ -27,7 +27,8 @@ func New(file string) (*Database, error) {
 			name TEXT NOT NULL,
 			email TEXT KEY,
 			type TEXT NOT NULL,
-			discord TEXT KEY
+			discord TEXT KEY,
+			urlkey TEXT NOT NULL
 		);
 		CREATE TABLE IF NOT EXISTS teams (
 			id INTEGER NOT NULL,
@@ -87,8 +88,8 @@ func (d *Database) AddParticipants(speakers bool, participants []tabbycat.Partic
 	}
 
 	stmt, err := d.db.Prepare(`
-		INSERT INTO participants (id, barcode, name, email, type)
-		VALUES (?, ?, ?, ?, ?)
+		INSERT INTO participants (id, barcode, name, email, type, urlkey)
+		VALUES (?, ?, ?, ?, ?, ?)
 	`)
 
 	if err != nil {
@@ -97,7 +98,7 @@ func (d *Database) AddParticipants(speakers bool, participants []tabbycat.Partic
 	defer stmt.Close()
 
 	for _, participant := range participants {
-		_, err := stmt.Exec(participant.Id, participant.Barcode, participant.Name, participant.Email, category)
+		_, err := stmt.Exec(participant.Id, participant.Barcode, participant.Name, participant.Email, category, participant.UrlKey)
 		if err != nil {
 			return err
 		}
@@ -204,7 +205,7 @@ func (d *Database) TeamEmails(teams []string) ([]string, error) {
 		WHERE t.id IN (%v)
 	`, strings.Join(teams, ","))
 
-	return d.emailsQuery(query)
+	return d.stringsQuery(query)
 }
 
 func (d *Database) ParticipantEmails(participants []string) ([]string, error) {
@@ -214,7 +215,28 @@ func (d *Database) ParticipantEmails(participants []string) ([]string, error) {
 		WHERE id IN (%v)
 	`, strings.Join(participants, ","))
 
-	return d.emailsQuery(query)
+	return d.stringsQuery(query)
+}
+
+func (d *Database) DiscordFromTeamId(teamId string) ([]string, error) {
+	query := fmt.Sprintf(`
+		SELECT discord
+		FROM participants p
+		JOIN teams t ON (t.participant=p.id)
+		WHERE t.id = %v AND discord IS NOT NULL
+	`, teamId)
+
+	return d.stringsQuery(query)
+}
+
+func (d *Database) DiscordFromParticipantIds(participantIds []string) ([]string, error) {
+	query := fmt.Sprintf(`
+		SELECT discord
+		FROM participants
+		WHERE id IN (%v) AND discord IS NOT NULL
+	`, strings.Join(participantIds, ","))
+
+	return d.stringsQuery(query)
 }
 
 func (d *Database) Close() error {
@@ -243,23 +265,23 @@ func (d *Database) String() string {
 	return d.file
 }
 
-func (d *Database) emailsQuery(query string) ([]string, error) {
+func (d *Database) stringsQuery(query string) ([]string, error) {
 	rows, err := d.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	emails := make([]string, 0)
+	strings := make([]string, 0)
 
 	for rows.Next() {
-		var email string
-		if err := rows.Scan(&email); err != nil {
+		var str string
+		if err := rows.Scan(&str); err != nil {
 			return nil, err
 		}
 
-		emails = append(emails, email)
+		strings = append(strings, str)
 	}
 
-	return emails, nil
+	return strings, nil
 }

@@ -12,7 +12,7 @@ func Allocate(database db.Database, venues []tabbycat.Venue, rooms []tabbycat.Ro
 	var panellists [][]string
 	var trainees [][]string
 
-	venueMap := buildVenueMap(venues)
+	venueMap := BuildVenueMap(venues)
 
 	for _, room := range rooms {
 		name := venueMap[room.VenueId]
@@ -60,7 +60,7 @@ func LeftoversToNames(database db.Database, leftovers [][]string) ([][]string, e
 	return assignments, nil
 }
 
-func buildVenueMap(venues []tabbycat.Venue) map[string]string {
+func BuildVenueMap(venues []tabbycat.Venue) map[string]string {
 	venueMap := make(map[string]string)
 
 	for _, venue := range venues {

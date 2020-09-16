@@ -6,14 +6,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 var identifierStripper *regexp.Regexp = regexp.MustCompile(`/(\d+)$`)
 
 type Tabbycat struct {
-	apiKey   string
-	client   *http.Client
-	endpoint string
+	apiKey      string
+	client      *http.Client
+	endpoint    string
+	privateUrls string
 }
 
 type Team struct {
@@ -27,6 +29,7 @@ type Participant struct {
 	Id      uint   `json:"id"`
 	Name    string `json:"name"`
 	Barcode string
+	UrlKey  string `json:"url_key"`
 }
 
 type Room struct {
@@ -35,6 +38,7 @@ type Room struct {
 	TeamIds      []string
 	PanellistIds []string
 	TraineeIds   []string
+	SideNames    []string
 }
 
 type Round struct {
@@ -54,6 +58,7 @@ type teamResponse struct {
 		Trainees   []string
 	}
 	Teams []struct {
+		Side string
 		Team string
 	}
 	Venue string
@@ -66,9 +71,10 @@ type roundResponse struct {
 
 func New(apiKey string, url string, slug string) *Tabbycat {
 	return &Tabbycat{
-		apiKey:   apiKey,
-		client:   &http.Client{},
-		endpoint: fmt.Sprintf("%v/api/v1/tournaments/%v/", url, slug),
+		apiKey:      apiKey,
+		client:      &http.Client{},
+		endpoint:    fmt.Sprintf("%v/api/v1/tournaments/%v/", url, slug),
+		privateUrls: fmt.Sprintf("%v/%v/privateurls/", url, slug),
 	}
 }
 
@@ -191,6 +197,7 @@ func (t *Tabbycat) GetRound(round uint64) ([]Room, error) {
 		}
 
 		teamIds := make([]string, 0, len(datum.Teams))
+		sideNames := make([]string, 0, len(datum.Teams))
 		for _, team := range datum.Teams {
 			id, err := stripIdentifier(team.Team)
 			if err != nil {
@@ -198,6 +205,7 @@ func (t *Tabbycat) GetRound(round uint64) ([]Room, error) {
 			}
 
 			teamIds = append(teamIds, id)
+			sideNames = append(sideNames, strings.ToUpper(team.Side))
 		}
 
 		rooms = append(rooms, Room{
@@ -206,6 +214,7 @@ func (t *Tabbycat) GetRound(round uint64) ([]Room, error) {
 			TeamIds:      teamIds,
 			PanellistIds: panellistIds,
 			TraineeIds:   traineeIds,
+			SideNames:    sideNames,
 		})
 	}
 
@@ -234,6 +243,10 @@ func (t *Tabbycat) CheckIn(id uint, speaker bool) error {
 
 	_, err := t.makeRequest(http.MethodPut, fmt.Sprintf("%v/%v/checkin", category, id))
 	return err
+}
+
+func (t *Tabbycat) PrivateUrlFromKey(urlKey string) string {
+	return fmt.Sprintf("%v%v/", t.privateUrls, urlKey)
 }
 
 func (t *Tabbycat) authorize(req *http.Request) {

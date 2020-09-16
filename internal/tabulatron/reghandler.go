@@ -141,7 +141,7 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 		h.t.ReplyMessage(
 			evt.Message,
 			"there was an error setting your nickname and/or role! Please ask in %v for help.",
-			h.regHelpChannel,
+			h.regHelpChannel.Mention(),
 		)
 	}
 }
