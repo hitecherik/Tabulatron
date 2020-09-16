@@ -1,6 +1,6 @@
 GO = go
 BINDIR = /usr/local/bin
-ALL = resolver roundrunner pulltabbycat tabulatron tabbycatrounds zoomregistrants
+ALL = resolver roundrunner roundmessenger pulltabbycat tabulatron tabbycatrounds zoomregistrants
 LIBRARIES = $(shell find internal pkg -type f -iname '*.go')
 
 all: $(ALL)
@@ -19,6 +19,9 @@ resolver: cmd/resolver/resolver.go $(LIBRARIES)
 	$(GO) build -o $@ $<
 
 roundrunner: cmd/roundrunner/roundrunner.go $(LIBRARIES)
+	$(GO) build -o $@ $<
+
+roundmessenger: cmd/roundmessenger/roundmessenger.go $(LIBRARIES)
 	$(GO) build -o $@ $<
 
 pulltabbycat: cmd/pulltabbycat/pulltabbycat.go $(LIBRARIES)
