@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/hitecherik/Imperial-Online-IV/internal/db"
 	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
@@ -15,6 +16,7 @@ var opts struct {
 	tabbycatUrl    string
 	tabbycatSlug   string
 	verbose        bool
+	redact         bool
 	db             db.Database
 }
 
@@ -34,6 +36,7 @@ func init() {
 	var envFile string
 
 	flag.StringVar(&envFile, "env", ".env", "file to read environment variables from")
+	flag.BoolVar(&opts.redact, "redact", false, "redact participants' names")
 	flag.BoolVar(&opts.verbose, "verbose", false, "print additional input")
 	flag.Var(&opts.db, "db", "SQLite3 database representing the tournament")
 	flag.Parse()
@@ -56,8 +59,18 @@ func main() {
 
 	verbose("Fetched %v teams\n", len(teams))
 
+	if opts.redact {
+		for i := range teams {
+			redactNames(teams[i].Speakers)
+		}
+	}
+
 	adjudicators, err := tabbycat.GetAdjudicators()
 	bail(err)
+
+	if opts.redact {
+		redactNames(adjudicators)
+	}
 
 	verbose("Fetched %v adjudicators\n", len(adjudicators))
 
@@ -66,4 +79,18 @@ func main() {
 
 	bail(opts.db.AddParticipants(false, adjudicators))
 	verbose("Inserted %v adjudicators into database\n", len(adjudicators))
+}
+
+func redactNames(participants []tabbycat.Participant) {
+	for i := range participants {
+		components := strings.Split(participants[i].Name, " ")
+		redacted := make([]string, 1, len(components))
+		redacted[0] = components[0]
+
+		for _, component := range components[1:] {
+			redacted = append(redacted, strings.ToUpper(string(component[0])))
+		}
+
+		participants[i].Name = strings.Join(redacted, " ")
+	}
 }
