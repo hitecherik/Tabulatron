@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -113,11 +114,13 @@ func main() {
 			bail(err)
 
 			for _, snowflake := range snowflakes {
-				bail(createDMAndSendMessage(
+				if err := createDMAndSendMessage(
 					clients[rand.Intn(len(clients))],
 					snowflake,
 					fmt.Sprintf("In this round, you will be speaking in **%v** in room **%v**.", room.SideNames[i], venueName),
-				))
+				); err != nil {
+					log.Printf("Error sending message to %v: %v", snowflake, err.Error())
+				}
 			}
 		}
 
@@ -180,7 +183,7 @@ func sendMessagesToJudges(clients []*disgord.Client, ids []string, wingType stri
 		message := fmt.Sprintf("In this round, you will be judging as **%v** in room **%v**.", wingType, venue)
 
 		if err := createDMAndSendMessage(client, snowflake, message); err != nil {
-			return err
+			log.Printf("Error sending message to %v: %v", snowflake, err.Error())
 		}
 	}
 
