@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	registerRaw   string = `^!register(\d{1,})$`
+	registerRaw   string = `^!register(\d+)$`
 	startregRaw   string = `^!startreg$`
 	whitespaceRaw string = `\s`
 )

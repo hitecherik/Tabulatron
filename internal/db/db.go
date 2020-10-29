@@ -58,7 +58,7 @@ func (d *Database) Reset() error {
 
 func (d *Database) AddTeams(teams []tabbycat.Team) error {
 	stmt, err := d.db.Prepare(`
-		INSERT INTO teams (id, participant, emoji)
+		REPLACE INTO teams (id, participant, emoji)
 		VALUES (?, ?, ?)
 	`)
 	if err != nil {
@@ -87,7 +87,7 @@ func (d *Database) AddParticipants(speakers bool, participants []tabbycat.Partic
 		category = "speaker"
 	}
 
-	stmt, err := d.db.Prepare(`
+	insertStmt, err := d.db.Prepare(`
 		INSERT INTO participants (id, barcode, name, email, type, urlkey)
 		VALUES (?, ?, ?, ?, ?, ?)
 	`)
@@ -95,12 +95,40 @@ func (d *Database) AddParticipants(speakers bool, participants []tabbycat.Partic
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
+	defer insertStmt.Close()
+
+	updateStmt, err := d.db.Prepare(`
+		UPDATE participants
+		SET barcode=?, name=?, email=?, urlkey=?
+		WHERE id=?
+	`)
+
+	if err != nil {
+		return err
+	}
+	defer updateStmt.Close()
+
+	query := `
+		SELECT COUNT(*)
+		FROM participants
+		WHERE id=?
+	`
 
 	for _, participant := range participants {
-		_, err := stmt.Exec(participant.Id, participant.Barcode, participant.Name, participant.Email, category, participant.UrlKey)
-		if err != nil {
-			return err
+		row := d.db.QueryRow(query, participant.Id)
+		count := 0
+		_ = row.Scan(&count)
+
+		if count == 0 {
+			_, err := insertStmt.Exec(participant.Id, participant.Barcode, participant.Name, participant.Email, category, participant.UrlKey)
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err := updateStmt.Exec(participant.Barcode, participant.Name, participant.Email, participant.UrlKey, participant.Id)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
