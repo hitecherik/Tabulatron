@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"regexp"
+	"strings"
 
 	"github.com/andersfylling/disgord"
 )
@@ -57,13 +58,13 @@ func NewRegHandler(t *Tabulatron) *RegHandler {
 }
 
 func (h *RegHandler) CanHandle(_ disgord.Session, evt *disgord.MessageCreate) bool {
-	message := whitespace.ReplaceAll([]byte(evt.Message.Content), []byte{})
+	message := sanitiseMessage(evt.Message.Content)
 
 	return register.Match(message) || startreg.Match(message)
 }
 
 func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
-	messageContent := whitespace.ReplaceAll([]byte(evt.Message.Content), []byte{})
+	messageContent := sanitiseMessage(evt.Message.Content)
 
 	if startreg.Match(messageContent) {
 		if h.regStarted {
@@ -205,4 +206,8 @@ func (h *RegHandler) populateRoles(evt *disgord.MessageCreate) error {
 	}
 
 	return nil
+}
+
+func sanitiseMessage(message string) []byte {
+	return whitespace.ReplaceAll([]byte(strings.ToLower(message)), []byte{})
 }
