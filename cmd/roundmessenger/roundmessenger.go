@@ -125,7 +125,7 @@ func main() {
 		}
 
 		bail(sendMessagesToJudges(clients, []string{room.ChairId}, "the chair", venueName))
-		bail(sendMessagesToJudges(clients, room.PanellistIds, "a pannelist", venueName))
+		bail(sendMessagesToJudges(clients, room.PanellistIds, "a panellist", venueName))
 		bail(sendMessagesToJudges(clients, room.TraineeIds, "a trainee", venueName))
 
 		verbose("Sent messages for room %v\n", venueName)

@@ -9,13 +9,15 @@ import (
 )
 
 const (
-	registerRaw string = `^\s*!register\s*(\d{6})\s*$`
-	startregRaw string = `^\s*!startreg\s*$`
+	registerRaw   string = `^!register(\d{1,})$`
+	startregRaw   string = `^!startreg$`
+	whitespaceRaw string = `\s`
 )
 
 var (
-	register *regexp.Regexp
-	startreg *regexp.Regexp
+	register   *regexp.Regexp
+	startreg   *regexp.Regexp
+	whitespace *regexp.Regexp
 )
 
 type RegHandler struct {
@@ -40,6 +42,11 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	whitespace, err = regexp.Compile(whitespaceRaw)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 func NewRegHandler(t *Tabulatron) *RegHandler {
@@ -50,13 +57,15 @@ func NewRegHandler(t *Tabulatron) *RegHandler {
 }
 
 func (h *RegHandler) CanHandle(_ disgord.Session, evt *disgord.MessageCreate) bool {
-	message := []byte(evt.Message.Content)
+	message := whitespace.ReplaceAll([]byte(evt.Message.Content), []byte{})
 
 	return register.Match(message) || startreg.Match(message)
 }
 
 func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
-	if startreg.Match([]byte(evt.Message.Content)) {
+	messageContent := whitespace.ReplaceAll([]byte(evt.Message.Content), []byte{})
+
+	if startreg.Match(messageContent) {
 		if h.regStarted {
 			h.t.ReplyMessage(evt.Message, "I can't do that. Registration has already started.")
 			return
@@ -84,10 +93,10 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 		return
 	}
 
-	matches := register.FindSubmatch([]byte(evt.Message.Content))
+	matches := register.FindSubmatch(messageContent)
 
 	if len(matches) != 2 {
-		log.Printf("unexpected number of matches in '%v'", evt.Message.Content)
+		log.Printf("unexpected number of matches in '%v'", string(messageContent))
 		return
 	}
 
@@ -112,6 +121,14 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 			evt.Message,
 			"please replace `123456` in your message with your registration code. If you don't know what this is, ask in %v.",
 			h.regHelpChannel.Mention(),
+		)
+		return
+	}
+
+	if len(code) != 6 {
+		h.t.ReplyMessage(
+			evt.Message,
+			"please double-check your registration code – it should be six digits long.",
 		)
 		return
 	}
