@@ -107,17 +107,24 @@ func main() {
 		venueName := venueMap[room.VenueId]
 
 		for i, team := range room.TeamIds {
-			discords, err := opts.db.DiscordFromTeamId(team)
+			discords, urlKeys, err := opts.db.ParticipantsFromTeamId(team)
 			bail(err)
 
 			snowflakes, err := stringsToSnowflakes(discords)
 			bail(err)
 
-			for _, snowflake := range snowflakes {
+			for j, snowflake := range snowflakes {
+				privateUrl := tabbycat.PrivateUrlFromKey(urlKeys[j])
+
 				if err := createDMAndSendMessage(
 					clients[rand.Intn(len(clients))],
 					snowflake,
-					fmt.Sprintf("In this round, you will be speaking in **%v** in room **%v**.", room.SideNames[i], venueName),
+					fmt.Sprintf(
+						"In this round, you will be speaking in **%v** in room **%v**.\n\nYour private URL is %v.",
+						room.SideNames[i],
+						venueName,
+						privateUrl,
+					),
 				); err != nil {
 					log.Printf("Error sending message to %v: %v", snowflake, err.Error())
 				}
