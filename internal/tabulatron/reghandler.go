@@ -59,12 +59,18 @@ func NewRegHandler(t *Tabulatron) *RegHandler {
 
 func (h *RegHandler) CanHandle(_ disgord.Session, evt *disgord.MessageCreate) bool {
 	message := sanitiseMessage(evt.Message.Content)
+	username := sanitiseMessage(evt.Message.Author.Username)
 
-	return register.Match(message) || startreg.Match(message)
+	return register.Match(message) || (len(message) == 0 && register.Match(username)) || startreg.Match(message)
 }
 
 func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	messageContent := sanitiseMessage(evt.Message.Content)
+	usernameRegistration := len(messageContent) == 0
+
+	if usernameRegistration {
+		messageContent = sanitiseMessage(evt.Message.Author.Username)
+	}
 
 	if startreg.Match(messageContent) {
 		if h.regStarted {
@@ -108,7 +114,7 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 		return
 	}
 
-	if evt.Message.ChannelID != h.regChannel.ID {
+	if !usernameRegistration && evt.Message.ChannelID != h.regChannel.ID {
 		h.t.ReplyMessage(
 			evt.Message,
 			"you can't do that here. Registration can only happen in the %v channel.",
