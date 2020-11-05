@@ -10,13 +10,15 @@ import (
 )
 
 const (
-	registerRaw   string = `^!register(\d+)$`
+	registerRaw   string = `^[1!]?register(\d+)$`
+	numbersRaw    string = `^\d{6}$`
 	startregRaw   string = `^!startreg$`
 	whitespaceRaw string = `\s`
 )
 
 var (
 	register   *regexp.Regexp
+	numbers    *regexp.Regexp
 	startreg   *regexp.Regexp
 	whitespace *regexp.Regexp
 )
@@ -31,23 +33,26 @@ type RegHandler struct {
 	tabRole        *disgord.Role
 }
 
+func bail(err error) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+}
+
 func init() {
 	var err error
 
 	register, err = regexp.Compile(registerRaw)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	bail(err)
+
+	numbers, err = regexp.Compile(numbersRaw)
+	bail(err)
 
 	startreg, err = regexp.Compile(startregRaw)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	bail(err)
 
 	whitespace, err = regexp.Compile(whitespaceRaw)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	bail(err)
 }
 
 func NewRegHandler(t *Tabulatron) *RegHandler {
@@ -59,14 +64,24 @@ func NewRegHandler(t *Tabulatron) *RegHandler {
 
 func (h *RegHandler) CanHandle(_ disgord.Session, evt *disgord.MessageCreate) bool {
 	message := sanitiseMessage(evt.Message.Content)
-	username := sanitiseMessage(evt.Message.Author.Username)
 
-	return register.Match(message) || (len(message) == 0 && register.Match(username)) || startreg.Match(message)
+	if err := h.populateChannels(evt); err != nil {
+		log.Printf("error populating channels: %v", err.Error())
+	} else if evt.Message.ChannelID == h.regChannel.ID && numbers.Match(message) {
+		return true
+	}
+
+	if evt.Message.Type == disgord.MessageTypeGuildMemberJoin {
+		username := sanitiseMessage(evt.Message.Author.Username)
+		return register.Match(username) || numbers.Match(username)
+	}
+
+	return register.Match(message) || startreg.Match(message)
 }
 
 func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	messageContent := sanitiseMessage(evt.Message.Content)
-	usernameRegistration := len(messageContent) == 0
+	usernameRegistration := evt.Message.Type == disgord.MessageTypeGuildMemberJoin
 
 	if usernameRegistration {
 		messageContent = sanitiseMessage(evt.Message.Author.Username)
@@ -75,11 +90,7 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	if startreg.Match(messageContent) {
 		if h.regStarted {
 			h.t.ReplyMessage(evt.Message, "I can't do that. Registration has already started.")
-			return
-		}
-
-		if err := h.populateChannels(evt); err != nil {
-			log.Printf("error populating channels: %v", err.Error())
+			h.t.RejectMessage(s, evt.Message)
 			return
 		}
 
@@ -97,20 +108,25 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 		}
 
 		h.t.ReplyMessage(evt.Message, "you can't ask me to do that.")
+		h.t.RejectMessage(s, evt.Message)
 		return
 	}
 
+	code := string(messageContent)
 	matches := register.FindSubmatch(messageContent)
 
-	if len(matches) != 2 {
-		log.Printf("unexpected number of matches in '%v'", string(messageContent))
-		return
-	}
+	if matches != nil {
+		if len(matches) != 2 {
+			log.Printf("unexpected number of matches in '%v'", string(messageContent))
+			return
+		}
 
-	code := string(matches[1])
+		code = string(matches[1])
+	}
 
 	if !h.regStarted {
 		h.t.ReplyMessage(evt.Message, "I can't do that. Registration hasn't started yet.")
+		h.t.RejectMessage(s, evt.Message)
 		return
 	}
 
@@ -120,6 +136,7 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 			"you can't do that here. Registration can only happen in the %v channel.",
 			h.regChannel.Mention(),
 		)
+		h.t.RejectMessage(s, evt.Message)
 		return
 	}
 
@@ -129,6 +146,7 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 			"please replace `123456` in your message with your registration code. If you don't know what this is, ask in %v.",
 			h.regHelpChannel.Mention(),
 		)
+		h.t.RejectMessage(s, evt.Message)
 		return
 	}
 
@@ -137,6 +155,7 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 			evt.Message,
 			"please double-check your registration code – it should be six digits long.",
 		)
+		h.t.RejectMessage(s, evt.Message)
 		return
 	}
 
@@ -145,10 +164,11 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	if err != nil {
 		log.Printf("error registering speaker: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "there was an error registering you. Please check the code you entered and try again.")
+		h.t.RejectMessage(s, evt.Message)
 		return
 	}
 
-	h.t.ReplyMessage(evt.Message, "you have been successfully registered!")
+	h.t.AcknowledgeMessage(s, evt.Message)
 
 	role := h.judgeRole
 	if speaker {

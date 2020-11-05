@@ -52,7 +52,15 @@ func (t *Tabulatron) ReplyMessage(message *disgord.Message, reply string, a ...i
 }
 
 func (t *Tabulatron) AcknowledgeMessage(s disgord.Session, message *disgord.Message) {
-	if err := message.React(context.Background(), s, "✅"); err != nil {
+	t.reactMessage(s, message, "✅")
+}
+
+func (t *Tabulatron) RejectMessage(s disgord.Session, message *disgord.Message) {
+	t.reactMessage(s, message, "❌")
+}
+
+func (t *Tabulatron) reactMessage(s disgord.Session, message *disgord.Message, reaction string) {
+	if err := message.React(context.Background(), s, reaction); err != nil {
 		log.Printf("error reacting: %v\n", err.Error())
 	}
 }

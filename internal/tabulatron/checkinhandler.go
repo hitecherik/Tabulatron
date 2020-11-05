@@ -66,6 +66,7 @@ func (h *CheckinHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	if startcheckin.Match(rawMessage) {
 		if h.checkinStarted {
 			h.t.ReplyMessage(evt.Message, "I can't do that. Check-in has already started.")
+			h.t.RejectMessage(s, evt.Message)
 			return
 		}
 
@@ -86,11 +87,13 @@ func (h *CheckinHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 		}
 
 		h.t.ReplyMessage(evt.Message, "you can't ask me to do that.")
+		h.t.RejectMessage(s, evt.Message)
 		return
 	}
 
 	if !h.checkinStarted {
 		h.t.ReplyMessage(evt.Message, "I can't do that. Check-in hasn't started yet.")
+		h.t.RejectMessage(s, evt.Message)
 		return
 	}
 
@@ -102,6 +105,7 @@ func (h *CheckinHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 		}
 
 		h.t.ReplyMessage(evt.Message, "you can't ask me to do that.")
+		h.t.RejectMessage(s, evt.Message)
 		return
 	}
 
@@ -111,6 +115,7 @@ func (h *CheckinHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 			"you can't do that here. Check in can only happen in the %v channel.",
 			h.checkinChannel.Mention(),
 		)
+		h.t.RejectMessage(s, evt.Message)
 		return
 	}
 
@@ -118,12 +123,14 @@ func (h *CheckinHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	if err != nil {
 		log.Printf("error finding speaker: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "there was an error checking you in. Please ask for help in %v.", h.techHelpChannel.Mention())
+		h.t.RejectMessage(s, evt.Message)
 		return
 	}
 
 	if err := h.t.tabbycat.CheckIn(id, speaker); err != nil {
 		log.Printf("error checking in speaker: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "there was an error checking you in. Please ask for help in %v.", h.techHelpChannel.Mention())
+		h.t.RejectMessage(s, evt.Message)
 		return
 	}
 

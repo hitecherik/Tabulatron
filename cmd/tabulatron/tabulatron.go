@@ -77,8 +77,19 @@ func main() {
 	me, err := client.Myself(context.Background())
 	panic(err)
 
+	guildId := 0
+
 	client.On(disgord.EvtMessageCreate, func(s disgord.Session, evt *disgord.MessageCreate) {
 		if me.ID == evt.Message.Author.ID {
+			return
+		}
+
+		if guildId == 0 {
+			guildId = int(evt.Message.GuildID)
+			fmt.Printf("Bound to guild %v\n", evt.Message.GuildID)
+		}
+
+		if guildId != int(evt.Message.GuildID) || guildId == 0 {
 			return
 		}
 
