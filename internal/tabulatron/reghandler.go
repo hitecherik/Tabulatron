@@ -10,10 +10,11 @@ import (
 )
 
 const (
-	registerRaw   string = `^[1!]?register(\d+)$`
-	numbersRaw    string = `^\d{6}$`
-	startregRaw   string = `^!startreg$`
-	whitespaceRaw string = `\s`
+	registerRaw       string = `^[1!]?register(\d+)$`
+	numbersRaw        string = `^\d{6}$`
+	startregRaw       string = `^!startreg$`
+	whitespaceRaw     string = `\s`
+	maxNicknameLength int    = 32
 )
 
 var (
@@ -173,6 +174,10 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	role := h.judgeRole
 	if speaker {
 		role = h.speakerRole
+	}
+
+	if len(name) > maxNicknameLength {
+		name = name[:maxNicknameLength]
 	}
 
 	err = h.t.discord.
