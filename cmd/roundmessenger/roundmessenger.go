@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/andersfylling/disgord"
 	"github.com/hitecherik/Imperial-Online-IV/internal/db"
@@ -24,10 +27,17 @@ type options struct {
 	tabbycatApiKey string
 	tabbycatUrl    string
 	tabbycatSlug   string
+	urlsPath       string
 	verbose        bool
 }
 
+type url struct {
+	Prefix string
+	Url    string
+}
+
 var opts options
+var urls []url
 
 func bail(err error) {
 	if err != nil {
@@ -48,6 +58,7 @@ func init() {
 	flag.Var(&opts.round, "round", "a round to run")
 	flag.Var(&opts.db, "db", "SQLite3 database representing the tournament")
 	flag.BoolVar(&opts.verbose, "verbose", false, "print additional input")
+	flag.StringVar(&opts.urlsPath, "urls", "urls.json", "path to the zoom URLs json document")
 	flag.Parse()
 
 	if len(opts.round) == 0 {
@@ -73,6 +84,10 @@ func init() {
 	}
 
 	bail(opts.db.SetIfNotExists(fmt.Sprintf("%v.db", opts.tabbycatSlug)))
+
+	urlsRaw, err := ioutil.ReadFile(opts.urlsPath)
+	bail(err)
+	bail(json.Unmarshal(urlsRaw, &urls))
 }
 
 func main() {
@@ -105,6 +120,14 @@ func main() {
 
 	for _, room := range rooms {
 		venueName := venueMap[room.VenueId]
+		venueUrl := "not available"
+
+		for _, url := range urls {
+			if strings.HasPrefix(venueName, url.Prefix) {
+				venueUrl = url.Url
+				break
+			}
+		}
 
 		for i, team := range room.TeamIds {
 			discords, urlKeys, err := opts.db.ParticipantsFromTeamId(team)
@@ -120,9 +143,10 @@ func main() {
 					clients[rand.Intn(len(clients))],
 					snowflake,
 					fmt.Sprintf(
-						"In this round, you will be speaking in **%v** in room **%v**.\n\nYour private URL is %v.",
+						"In this round, you will be speaking in **%v** in room **%v**.\n\nThe link to your Zoom room is %v.\n\nYour private URL is %v.",
 						room.SideNames[i],
 						venueName,
+						venueUrl,
 						privateUrl,
 					),
 				); err != nil {
@@ -131,9 +155,9 @@ func main() {
 			}
 		}
 
-		bail(sendMessagesToJudges(clients, []string{room.ChairId}, "the chair", venueName))
-		bail(sendMessagesToJudges(clients, room.PanellistIds, "a panellist", venueName))
-		bail(sendMessagesToJudges(clients, room.TraineeIds, "a trainee", venueName))
+		bail(sendMessagesToJudges(clients, tabbycat, []string{room.ChairId}, "the chair", venueName, venueUrl))
+		bail(sendMessagesToJudges(clients, tabbycat, room.PanellistIds, "a panellist", venueName, venueUrl))
+		bail(sendMessagesToJudges(clients, tabbycat, room.TraineeIds, "a trainee", venueName, venueUrl))
 
 		verbose("Sent messages for room %v\n", venueName)
 	}
@@ -174,8 +198,8 @@ func createDMAndSendMessage(client *disgord.Client, snowflake disgord.Snowflake,
 	return err
 }
 
-func sendMessagesToJudges(clients []*disgord.Client, ids []string, wingType string, venue string) error {
-	discords, err := opts.db.DiscordFromParticipantIds(ids)
+func sendMessagesToJudges(clients []*disgord.Client, tabbycat *tabbycat.Tabbycat, ids []string, wingType string, venue string, url string) error {
+	discords, urlKeys, err := opts.db.DiscordFromParticipantIds(ids)
 	if err != nil {
 		return err
 	}
@@ -185,9 +209,15 @@ func sendMessagesToJudges(clients []*disgord.Client, ids []string, wingType stri
 		return err
 	}
 
-	for _, snowflake := range snowflakes {
+	for i, snowflake := range snowflakes {
 		client := clients[rand.Intn(len(clients))]
-		message := fmt.Sprintf("In this round, you will be judging as **%v** in room **%v**.", wingType, venue)
+		message := fmt.Sprintf(
+			"In this round, you will be judging as **%v** in room **%v**.\n\nThe link to your Zoom room is %v.\n\nYour private URL is %v.",
+			wingType,
+			venue,
+			url,
+			tabbycat.PrivateUrlFromKey(urlKeys[i]),
+		)
 
 		if err := createDMAndSendMessage(client, snowflake, message); err != nil {
 			log.Printf("Error sending message to %v: %v", snowflake, err.Error())

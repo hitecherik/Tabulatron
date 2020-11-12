@@ -279,14 +279,36 @@ func (d *Database) ParticipantsFromTeamId(teamId string) ([]string, []string, er
 	return snowflakes, urlKeys, nil
 }
 
-func (d *Database) DiscordFromParticipantIds(participantIds []string) ([]string, error) {
+func (d *Database) DiscordFromParticipantIds(participantIds []string) ([]string, []string, error) {
 	query := fmt.Sprintf(`
-		SELECT discord
+		SELECT discord, urlkey
 		FROM participants
 		WHERE id IN (%v) AND discord IS NOT NULL
 	`, strings.Join(participantIds, ","))
 
-	return d.stringsQuery(query)
+	rows, err := d.db.Query(query)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	snowflakes := make([]string, 0)
+	urlKeys := make([]string, 0)
+
+	for rows.Next() {
+		var (
+			snowflake string
+			urlKey    string
+		)
+		if err := rows.Scan(&snowflake, &urlKey); err != nil {
+			return nil, nil, err
+		}
+
+		snowflakes = append(snowflakes, snowflake)
+		urlKeys = append(urlKeys, urlKey)
+	}
+
+	return snowflakes, urlKeys, nil
 }
 
 func (d *Database) Close() error {
