@@ -58,7 +58,7 @@ func init() {
 	flag.Var(&opts.round, "round", "a round to run")
 	flag.Var(&opts.db, "db", "SQLite3 database representing the tournament")
 	flag.BoolVar(&opts.verbose, "verbose", false, "print additional input")
-	flag.StringVar(&opts.urlsPath, "urls", "urls.json", "path to the zoom URLs json document")
+	flag.StringVar(&opts.urlsPath, "urls", "", "path to the zoom URLs json document")
 	flag.Parse()
 
 	if len(opts.round) == 0 {
@@ -85,9 +85,13 @@ func init() {
 
 	bail(opts.db.SetIfNotExists(fmt.Sprintf("%v.db", opts.tabbycatSlug)))
 
-	urlsRaw, err := ioutil.ReadFile(opts.urlsPath)
-	bail(err)
-	bail(json.Unmarshal(urlsRaw, &urls))
+	if opts.urlsPath == "" {
+		urls = []url{}
+	} else {
+		urlsRaw, err := ioutil.ReadFile(opts.urlsPath)
+		bail(err)
+		bail(json.Unmarshal(urlsRaw, &urls))
+	}
 }
 
 func main() {
@@ -120,7 +124,7 @@ func main() {
 
 	for _, room := range rooms {
 		venueName := venueMap[room.VenueId]
-		venueUrl := "not available"
+		venueUrl := ""
 
 		for _, url := range urls {
 			if strings.HasPrefix(venueName, url.Prefix) {
@@ -138,18 +142,17 @@ func main() {
 
 			for j, snowflake := range snowflakes {
 				privateUrl := tabbycat.PrivateUrlFromKey(urlKeys[j])
+				message := fmt.Sprintf("In this round, you will be speaking in **%v** in room **%v**.", room.SideNames[i], venueName)
 
-				if err := createDMAndSendMessage(
-					clients[rand.Intn(len(clients))],
-					snowflake,
-					fmt.Sprintf(
-						"In this round, you will be speaking in **%v** in room **%v**.\n\nThe link to your Zoom room is %v.\n\nYour private URL is %v.",
-						room.SideNames[i],
-						venueName,
-						venueUrl,
-						privateUrl,
-					),
-				); err != nil {
+				if venueUrl != "" {
+					message = fmt.Sprintf("%v\n\nThe link to your Zoom room is %v.", message, venueUrl)
+				}
+
+				if privateUrl != "" {
+					message = fmt.Sprintf("%v\n\nYour private URL is %v.", message, privateUrl)
+				}
+
+				if err := createDMAndSendMessage(clients[rand.Intn(len(clients))], snowflake, message); err != nil {
 					log.Printf("Error sending message to %v: %v", snowflake, err.Error())
 				}
 			}
@@ -211,13 +214,15 @@ func sendMessagesToJudges(clients []*disgord.Client, tabbycat *tabbycat.Tabbycat
 
 	for i, snowflake := range snowflakes {
 		client := clients[rand.Intn(len(clients))]
-		message := fmt.Sprintf(
-			"In this round, you will be judging as **%v** in room **%v**.\n\nThe link to your Zoom room is %v.\n\nYour private URL is %v.",
-			wingType,
-			venue,
-			url,
-			tabbycat.PrivateUrlFromKey(urlKeys[i]),
-		)
+		message := fmt.Sprintf("In this round, you will be judging as **%v** in room **%v**.", wingType, venue)
+
+		if url != "" {
+			message = fmt.Sprintf("%v\n\nThe link to your Zoom room is %v.", message, url)
+		}
+
+		if urlKeys[i] != "" {
+			message = fmt.Sprintf("%v\n\nYour private URL is %v.", message, tabbycat.PrivateUrlFromKey(urlKeys[i]))
+		}
 
 		if err := createDMAndSendMessage(client, snowflake, message); err != nil {
 			log.Printf("Error sending message to %v: %v", snowflake, err.Error())
