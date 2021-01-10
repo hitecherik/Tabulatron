@@ -65,6 +65,19 @@ func (t *Tabulatron) RejectMessage(s disgord.Session, message *disgord.Message) 
 	t.reactMessage(s, message, "❌")
 }
 
+func (t *Tabulatron) CreateDMAndSendMessage(snowflake disgord.Snowflake, message string) {
+	channel, err := t.discord.CreateDM(context.Background(), snowflake)
+	if err != nil {
+		log.Printf("error creating DM with user %v: %v", snowflake, err.Error())
+		return
+	}
+
+	_, err = channel.SendMsgString(context.Background(), t.discord, message)
+	if err != nil {
+		log.Printf("error sending DM to user %v: %v", snowflake, err.Error())
+	}
+}
+
 func (t *Tabulatron) reactMessage(s disgord.Session, message *disgord.Message, reaction string) {
 	if err := message.React(context.Background(), s, reaction); err != nil {
 		log.Printf("error reacting: %v\n", err.Error())

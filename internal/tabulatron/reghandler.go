@@ -213,6 +213,8 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 			h.regHelpChannel.Mention(),
 		)
 	}
+
+	go h.t.CreateDMAndSendMessage(author.ID, "Congratulations! You have successfully registered.")
 }
 
 func (h *RegHandler) populateChannels(evt *disgord.MessageCreate) error {
