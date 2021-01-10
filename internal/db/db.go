@@ -238,6 +238,17 @@ func (d *Database) ParticipantFromDiscord(discord string) (uint, bool, error) {
 	return id, category == "speaker", nil
 }
 
+func (d *Database) ClearParticipantFromDiscord(discord string) error {
+	query := `
+		UPDATE participants
+		SET discord = NULL
+		WHERE discord = ?
+	`
+
+	_, err := d.db.Exec(query, discord)
+	return err
+}
+
 func (d *Database) ParticipantNameFromEmail(email string) (string, error) {
 	query := `
 		SELECT name

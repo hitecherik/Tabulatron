@@ -95,4 +95,12 @@ func main() {
 
 		tron.HandleMessage(s, evt)
 	})
+
+	client.On(disgord.EvtGuildMemberRemove, func(s disgord.Session, evt *disgord.GuildMemberRemove) {
+		if guildId == 0 || int(evt.GuildID) == 0 {
+			return
+		}
+
+		tron.HandleDeparture(s, evt)
+	})
 }

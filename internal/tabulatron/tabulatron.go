@@ -40,6 +40,12 @@ func (t *Tabulatron) HandleMessage(s disgord.Session, evt *disgord.MessageCreate
 	log.Printf("could not find handler for message '%v' from '%v'", evt.Message.Content, evt.Message.Author.Username)
 }
 
+func (t *Tabulatron) HandleDeparture(s disgord.Session, evt *disgord.GuildMemberRemove) {
+	if err := t.database.ClearParticipantFromDiscord(fmt.Sprint(evt.User.ID)); err != nil {
+		log.Printf("could not clear user %v (snowflake %v): %v", evt.User.Username, evt.User.ID, err.Error())
+	}
+}
+
 func (t *Tabulatron) ReplyMessage(message *disgord.Message, reply string, a ...interface{}) *disgord.Message {
 	fullReply := fmt.Sprintf(reply, a...)
 	m, err := message.Reply(context.Background(), t.discord, fmt.Sprintf("%v, %v", message.Author.Mention(), fullReply))
