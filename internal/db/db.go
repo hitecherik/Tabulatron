@@ -190,6 +190,35 @@ func (d *Database) ParticipantFromBarcode(barcode string, discord string) (uint,
 	return id, name, category == "speaker", nil
 }
 
+func (d *Database) ClearParticipantFromBarcode(barcode string) (string, error) {
+	query := fmt.Sprintf(`
+		SELECT discord
+		FROM participants
+		WHERE barcode='%v'
+		LIMIT 1
+	`, barcode)
+
+	discords, err := d.stringsQuery(query)
+	if err != nil {
+		return "", err
+	}
+	if len(discords) == 0 {
+		return "", fmt.Errorf("no users with barcode %v found", barcode)
+	}
+
+	query = `
+		UPDATE participants
+		SET discord = NULL
+		WHERE barcode = ?
+	`
+
+	if _, err := d.db.Exec(query, barcode); err != nil {
+		return "", err
+	}
+
+	return discords[0], nil
+}
+
 func (d *Database) ParticipantFromDiscord(discord string) (uint, bool, error) {
 	query := `
 		SELECT id, type

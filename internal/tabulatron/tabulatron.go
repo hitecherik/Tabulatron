@@ -24,7 +24,7 @@ type Tabulatron struct {
 
 func New(discord *disgord.Client, database *db.Database, tabbycat *tabbycat.Tabbycat) *Tabulatron {
 	t := &Tabulatron{discord, database, tabbycat, []MessageHandler{}}
-	t.handlers = append(t.handlers, NewRegHandler(t), NewCheckinHandler(t))
+	t.handlers = append(t.handlers, NewRegHandler(t), NewCheckinHandler(t), NewClearHandler(t))
 
 	return t
 }

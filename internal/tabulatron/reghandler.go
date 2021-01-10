@@ -13,6 +13,7 @@ const (
 	registerRaw       string = `^[1!]?register[^\d]*(\d+)$`
 	numbersRaw        string = `^\d{6}$`
 	startregRaw       string = `^!startreg$`
+	linkRaw           string = `!link<@!\d+>(\d{6})$`
 	whitespaceRaw     string = `\s`
 	maxNicknameLength int    = 32
 )
@@ -21,6 +22,7 @@ var (
 	register   *regexp.Regexp
 	numbers    *regexp.Regexp
 	startreg   *regexp.Regexp
+	link       *regexp.Regexp
 	whitespace *regexp.Regexp
 )
 
@@ -52,6 +54,9 @@ func init() {
 	startreg, err = regexp.Compile(startregRaw)
 	bail(err)
 
+	link, err = regexp.Compile(linkRaw)
+	bail(err)
+
 	whitespace, err = regexp.Compile(whitespaceRaw)
 	bail(err)
 }
@@ -77,15 +82,21 @@ func (h *RegHandler) CanHandle(_ disgord.Session, evt *disgord.MessageCreate) bo
 		return register.Match(username) || numbers.Match(username)
 	}
 
-	return register.Match(message) || startreg.Match(message)
+	return register.Match(message) || startreg.Match(message) || link.Match(message)
 }
 
 func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	messageContent := sanitiseMessage(evt.Message.Content)
 	usernameRegistration := evt.Message.Type == disgord.MessageTypeGuildMemberJoin
+	linkRegistration := link.Match(messageContent)
 
 	if usernameRegistration {
 		messageContent = sanitiseMessage(evt.Message.Author.Username)
+	}
+
+	author := evt.Message.Author
+	if linkRegistration {
+		author = evt.Message.Mentions[0]
 	}
 
 	if startreg.Match(messageContent) {
@@ -100,12 +111,10 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 			return
 		}
 
-		for _, role := range evt.Message.Member.Roles {
-			if role == h.tabRole.ID {
-				h.t.AcknowledgeMessage(s, evt.Message)
-				h.regStarted = true
-				return
-			}
+		if h.hasTabRole(evt.Message.Member) {
+			h.t.AcknowledgeMessage(s, evt.Message)
+			h.regStarted = true
+			return
 		}
 
 		h.t.ReplyMessage(evt.Message, "you can't ask me to do that.")
@@ -113,8 +122,19 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 		return
 	}
 
+	if linkRegistration && !h.hasTabRole(evt.Message.Member) {
+		h.t.ReplyMessage(evt.Message, "you can't ask me to do that.")
+		h.t.RejectMessage(s, evt.Message)
+		return
+	}
+
+	re := register
+	if linkRegistration {
+		re = link
+	}
+
 	code := string(messageContent)
-	matches := register.FindSubmatch(messageContent)
+	matches := re.FindSubmatch(messageContent)
 
 	if matches != nil {
 		if len(matches) != 2 {
@@ -160,7 +180,7 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 		return
 	}
 
-	_, name, speaker, err := h.t.database.ParticipantFromBarcode(code, evt.Message.Author.ID.String())
+	_, name, speaker, err := h.t.database.ParticipantFromBarcode(code, author.ID.String())
 
 	if err != nil {
 		log.Printf("error registering speaker: %v", err.Error())
@@ -181,7 +201,7 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	}
 
 	err = h.t.discord.
-		UpdateGuildMember(context.Background(), evt.Message.GuildID, evt.Message.Author.ID).
+		UpdateGuildMember(context.Background(), evt.Message.GuildID, author.ID).
 		SetNick(name).
 		SetRoles([]disgord.Snowflake{role.ID}).
 		Execute()
@@ -237,6 +257,16 @@ func (h *RegHandler) populateRoles(evt *disgord.MessageCreate) error {
 	}
 
 	return nil
+}
+
+func (h *RegHandler) hasTabRole(member *disgord.Member) bool {
+	for _, role := range member.Roles {
+		if role == h.tabRole.ID {
+			return true
+		}
+	}
+
+	return false
 }
 
 func sanitiseMessage(message string) []byte {
