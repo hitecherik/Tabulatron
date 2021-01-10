@@ -2,18 +2,16 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/andersfylling/disgord"
 	"github.com/hitecherik/Imperial-Online-IV/internal/db"
+	"github.com/hitecherik/Imperial-Online-IV/internal/multiroom"
 	"github.com/hitecherik/Imperial-Online-IV/internal/roundrunner"
 	"github.com/hitecherik/Imperial-Online-IV/internal/rounds"
 	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
@@ -27,17 +25,11 @@ type options struct {
 	tabbycatApiKey string
 	tabbycatUrl    string
 	tabbycatSlug   string
-	urlsPath       string
 	verbose        bool
-}
-
-type url struct {
-	Prefix string
-	Url    string
+	categories     multiroom.Categories
 }
 
 var opts options
-var urls []url
 
 func bail(err error) {
 	if err != nil {
@@ -58,7 +50,7 @@ func init() {
 	flag.Var(&opts.round, "round", "a round to run")
 	flag.Var(&opts.db, "db", "SQLite3 database representing the tournament")
 	flag.BoolVar(&opts.verbose, "verbose", false, "print additional input")
-	flag.StringVar(&opts.urlsPath, "urls", "", "path to the zoom URLs json document")
+	flag.Var(&opts.categories, "categories", "path to the categories TOML document")
 	flag.Parse()
 
 	if len(opts.round) == 0 {
@@ -84,14 +76,6 @@ func init() {
 	}
 
 	bail(opts.db.SetIfNotExists(fmt.Sprintf("%v.db", opts.tabbycatSlug)))
-
-	if opts.urlsPath == "" {
-		urls = []url{}
-	} else {
-		urlsRaw, err := ioutil.ReadFile(opts.urlsPath)
-		bail(err)
-		bail(json.Unmarshal(urlsRaw, &urls))
-	}
 }
 
 func main() {
@@ -124,14 +108,12 @@ func main() {
 
 	for _, room := range rooms {
 		venueName := venueMap[room.VenueId]
-		venueUrl := ""
-
-		for _, url := range urls {
-			if strings.HasPrefix(venueName, url.Prefix) {
-				venueUrl = url.Url
-				break
-			}
+		venueCategory, err := opts.categories.Lookup(venueName)
+		if err != nil {
+			log.Print(err.Error())
 		}
+
+		venueUrl := venueCategory.Url
 
 		for i, team := range room.TeamIds {
 			discords, urlKeys, err := opts.db.ParticipantsFromTeamId(team)

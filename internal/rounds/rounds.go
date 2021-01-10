@@ -15,7 +15,7 @@ func (rs *Rounds) String() string {
 		ids = append(ids, fmt.Sprintf("%v", r))
 	}
 
-	return strings.Join(ids, ",")
+	return strings.Join(ids, "-")
 }
 
 func (rs *Rounds) Set(s string) error {

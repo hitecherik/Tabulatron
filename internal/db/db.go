@@ -249,23 +249,6 @@ func (d *Database) ClearParticipantFromDiscord(discord string) error {
 	return err
 }
 
-func (d *Database) ParticipantNameFromEmail(email string) (string, error) {
-	query := `
-		SELECT name
-		FROM participants
-		WHERE email = ?
-		LIMIT 1
-	`
-
-	row := d.db.QueryRow(query, email)
-	var name string
-	if err := row.Scan(&name); err != nil {
-		return "", err
-	}
-
-	return name, nil
-}
-
 func (d *Database) TeamEmails(teams []string) ([]string, error) {
 	query := fmt.Sprintf(`
 		SELECT email

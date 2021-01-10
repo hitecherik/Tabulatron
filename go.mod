@@ -10,6 +10,7 @@ require (
 	github.com/klauspost/compress v1.10.10 // indirect
 	github.com/mattn/go-sqlite3 v1.14.0
 	github.com/olekukonko/tablewriter v0.0.4
+	github.com/pelletier/go-toml v1.8.1
 	github.com/stretchr/testify v1.6.1 // indirect
 	go.uber.org/atomic v1.6.0 // indirect
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect

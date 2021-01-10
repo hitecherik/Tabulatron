@@ -4,23 +4,24 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/hitecherik/Imperial-Online-IV/internal/db"
+	"github.com/hitecherik/Imperial-Online-IV/internal/multiroom"
 	"github.com/hitecherik/Imperial-Online-IV/internal/roundrunner"
 	"github.com/hitecherik/Imperial-Online-IV/internal/rounds"
 	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
 	"github.com/hitecherik/Imperial-Online-IV/pkg/zoom"
 	"github.com/joho/godotenv"
-	"github.com/olekukonko/tablewriter"
 )
 
 type options struct {
 	round          rounds.Rounds
-	csv            string
 	db             db.Database
 	tabbycatApiKey string
 	tabbycatUrl    string
 	tabbycatSlug   string
+	categories     multiroom.Categories
 	verbose        bool
 }
 
@@ -43,8 +44,8 @@ func init() {
 
 	flag.StringVar(&envFile, "env", ".env", "file to read environment variables from")
 	flag.Var(&opts.round, "round", "a round to run")
-	flag.StringVar(&opts.csv, "csv", "round.csv", "CSV file to allocate breakout rooms in")
 	flag.Var(&opts.db, "db", "SQLite3 database representing the tournament")
+	flag.Var(&opts.categories, "categories", "path to the categories TOML document")
 	flag.BoolVar(&opts.verbose, "verbose", false, "print additional input")
 	flag.Parse()
 
@@ -79,31 +80,29 @@ func main() {
 
 	verbose("Fetched %v venues\n", len(venues))
 
-	assignments, err := roundrunner.Allocate(opts.db, venues, rooms)
+	assignments, err := roundrunner.Allocate(opts.db, venues, rooms, opts.categories)
 	bail(err)
 
-	file, err := os.Create(opts.csv)
-	bail(err)
-	defer file.Close()
+	written := 0
 
-	leftovers, err := zoom.WriteCsv(file, assignments)
-	bail(err)
-
-	if len(leftovers) > 0 {
-		verbose("%v assignments leftover\n", len(leftovers))
-
-		assignments, err := roundrunner.LeftoversToNames(opts.db, leftovers)
-		bail(err)
-
-		fmt.Println("Please manually perform the following breakout room assignments:")
-
-		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Name", "Room"})
-
-		for _, assignment := range assignments {
-			table.Append(assignment)
+	for _, assignment := range assignments {
+		if len(assignment.Allocation) == 0 {
+			continue
 		}
 
-		table.Render()
+		base := fmt.Sprintf("round-%v", opts.round.String())
+
+		if assignment.Category.Name != "" {
+			base = fmt.Sprintf("%v-%v", base, strings.ToLower(assignment.Category.Name))
+		}
+
+		file, err := os.Create(fmt.Sprintf("%v.csv", base))
+		bail(err)
+		bail(zoom.WriteCsv(file, assignment.Allocation))
+		file.Close()
+
+		written += 1
 	}
+
+	verbose("Wrote %v files\n", written)
 }
