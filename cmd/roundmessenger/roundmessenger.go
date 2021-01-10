@@ -141,14 +141,14 @@ func main() {
 			bail(err)
 
 			for j, snowflake := range snowflakes {
-				privateUrl := tabbycat.PrivateUrlFromKey(urlKeys[j])
 				message := fmt.Sprintf("In this round, you will be speaking in **%v** in room **%v**.", room.SideNames[i], venueName)
 
 				if venueUrl != "" {
 					message = fmt.Sprintf("%v\n\nThe link to your Zoom room is %v.", message, venueUrl)
 				}
 
-				if privateUrl != "" {
+				if urlKeys[j] != "" {
+					privateUrl := tabbycat.PrivateUrlFromKey(urlKeys[j])
 					message = fmt.Sprintf("%v\n\nYour private URL is %v.", message, privateUrl)
 				}
 
