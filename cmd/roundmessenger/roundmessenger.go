@@ -93,7 +93,7 @@ func main() {
 	tabbycat := tabbycat.New(opts.tabbycatApiKey, opts.tabbycatUrl, opts.tabbycatSlug)
 
 	for _, round := range opts.round {
-		r, err := tabbycat.GetRound(round)
+		r, err := tabbycat.GetDraw(round)
 		bail(err)
 		rooms = append(rooms, r...)
 	}

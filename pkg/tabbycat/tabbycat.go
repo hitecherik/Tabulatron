@@ -1,12 +1,15 @@
 package tabbycat
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var identifierStripper *regexp.Regexp = regexp.MustCompile(`/(\d+)$`)
@@ -42,13 +45,19 @@ type Room struct {
 }
 
 type Round struct {
-	Id   string
-	Name string
+	Id     string
+	Name   string
+	Motion Motion
 }
 
 type Venue struct {
 	Id   uint
 	Name string
+}
+
+type Motion struct {
+	InfoSlide string `json:"info_slide"`
+	Motion    string `json:"text"`
 }
 
 type teamResponse struct {
@@ -65,8 +74,9 @@ type teamResponse struct {
 }
 
 type roundResponse struct {
-	Url  string
-	Name string
+	Url     string
+	Name    string
+	Motions []Motion
 }
 
 func New(apiKey string, url string, slug string) *Tabbycat {
@@ -79,7 +89,7 @@ func New(apiKey string, url string, slug string) *Tabbycat {
 }
 
 func (t *Tabbycat) GetAdjudicators() ([]Participant, error) {
-	response, err := t.makeRequest(http.MethodGet, "adjudicators")
+	response, err := t.makeRequest(http.MethodGet, "adjudicators", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +107,7 @@ func (t *Tabbycat) GetAdjudicators() ([]Participant, error) {
 }
 
 func (t *Tabbycat) GetTeams() ([]Team, error) {
-	response, err := t.makeRequest(http.MethodGet, "teams")
+	response, err := t.makeRequest(http.MethodGet, "teams", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +133,7 @@ func (t *Tabbycat) GetBarcodes(speakers bool, participants []Participant) error 
 	}
 
 	for i := range participants {
-		raw, err := t.makeRequest(http.MethodGet, fmt.Sprintf("%v/%v/checkin", category, participants[i].Id))
+		raw, err := t.makeRequest(http.MethodGet, fmt.Sprintf("%v/%v/checkin", category, participants[i].Id), nil)
 		if err != nil {
 			return err
 		}
@@ -140,7 +150,7 @@ func (t *Tabbycat) GetBarcodes(speakers bool, participants []Participant) error 
 }
 
 func (t *Tabbycat) GetRounds() ([]Round, error) {
-	response, err := t.makeRequest(http.MethodGet, "rounds")
+	response, err := t.makeRequest(http.MethodGet, "rounds", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -152,19 +162,57 @@ func (t *Tabbycat) GetRounds() ([]Round, error) {
 
 	rounds := make([]Round, 0, len(responses))
 	for _, response := range responses {
-		id, err := stripIdentifier(response.Url)
+		round, err := response.toRound()
 		if err != nil {
 			return nil, err
 		}
 
-		rounds = append(rounds, Round{id, response.Name})
+		rounds = append(rounds, round)
 	}
 
 	return rounds, nil
 }
 
-func (t *Tabbycat) GetRound(round uint64) ([]Room, error) {
-	response, err := t.makeRequest(http.MethodGet, fmt.Sprintf("rounds/%v/pairings", round))
+func (t *Tabbycat) GetRound(round uint64) (Round, error) {
+	response, err := t.makeRequest(http.MethodGet, fmt.Sprintf("rounds/%v", round), nil)
+	if err != nil {
+		return Round{}, err
+	}
+
+	var rawRound roundResponse
+	if err := json.Unmarshal(response, &rawRound); err != nil {
+		return Round{}, err
+	}
+
+	return rawRound.toRound()
+}
+
+func (t *Tabbycat) ReleaseMotion(round uint64, starts time.Time) error {
+	path := fmt.Sprintf("rounds/%v", round)
+	response, err := t.makeRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return err
+	}
+
+	var roundObject map[string]interface{}
+	if err := json.Unmarshal(response, &roundObject); err != nil {
+		return err
+	}
+
+	roundObject["motions_released"] = true
+	roundObject["starts_at"] = starts.Format("15:04:05")
+
+	serialized, err := json.Marshal(roundObject)
+	if err != nil {
+		return err
+	}
+
+	_, err = t.makeRequest(http.MethodPost, path, bytes.NewReader(serialized))
+	return err
+}
+
+func (t *Tabbycat) GetDraw(round uint64) ([]Room, error) {
+	response, err := t.makeRequest(http.MethodGet, fmt.Sprintf("rounds/%v/pairings", round), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +270,7 @@ func (t *Tabbycat) GetRound(round uint64) ([]Room, error) {
 }
 
 func (t *Tabbycat) GetVenues() ([]Venue, error) {
-	response, err := t.makeRequest(http.MethodGet, "venues")
+	response, err := t.makeRequest(http.MethodGet, "venues", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +289,7 @@ func (t *Tabbycat) CheckIn(id uint, speaker bool) error {
 		category = "speakers"
 	}
 
-	_, err := t.makeRequest(http.MethodPut, fmt.Sprintf("%v/%v/checkin", category, id))
+	_, err := t.makeRequest(http.MethodPut, fmt.Sprintf("%v/%v/checkin", category, id), nil)
 	return err
 }
 
@@ -249,17 +297,18 @@ func (t *Tabbycat) PrivateUrlFromKey(urlKey string) string {
 	return fmt.Sprintf("%v%v/", t.privateUrls, urlKey)
 }
 
-func (t *Tabbycat) authorize(req *http.Request) {
-	req.Header.Add("Authorization", fmt.Sprintf("Token %v", t.apiKey))
-}
-
-func (t *Tabbycat) makeRequest(method string, url string) ([]byte, error) {
-	req, err := http.NewRequest(method, t.endpoint+url, nil)
+func (t *Tabbycat) makeRequest(method string, url string, body io.Reader) ([]byte, error) {
+	req, err := http.NewRequest(method, t.endpoint+url, body)
 	if err != nil {
 		return nil, err
 	}
 
-	t.authorize(req)
+	req.Header.Add("Authorization", fmt.Sprintf("Token %v", t.apiKey))
+
+	if method == http.MethodPost {
+		req.Header.Add("Content-Type", "application/json")
+	}
+
 	resp, err := t.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -293,4 +342,18 @@ func stripIdentifiers(urls []string) ([]string, error) {
 	}
 
 	return ids, nil
+}
+
+func (r *roundResponse) toRound() (Round, error) {
+	id, err := stripIdentifier(r.Url)
+	if err != nil {
+		return Round{}, err
+	}
+
+	var motion Motion
+	if len(r.Motions) > 0 {
+		motion = r.Motions[0]
+	}
+
+	return Round{id, r.Name, motion}, nil
 }
