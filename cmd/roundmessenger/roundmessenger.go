@@ -145,17 +145,22 @@ func main() {
 		snowflakes, err := stringsToSnowflakes(discords)
 		bail(err)
 
+		allPresent := len(snowflakes) == len(judgeIds)
+
 		for j, snowflake := range snowflakes {
-			position := "the chair"
-			if j > 0 {
-				position = "a panellist"
-				if j > len(room.PanellistIds) {
-					position = "a trainee"
+			position := "judging"
+			if allPresent {
+				position = "judging as the **chair**"
+				if j > 0 {
+					position = "judging as a **panellist**"
+					if j > len(room.PanellistIds) {
+						position = "judging as a **trainee**"
+					}
 				}
 			}
 
 			message := fmt.Sprintf(
-				"In this round, you will be judging as **%v** in room **%v**.%v",
+				"In this round, you will be %v in room **%v**.%v",
 				position,
 				venueName,
 				addLinks(tabbycat, category.Url, urlKeys[j]),
