@@ -5,12 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"strconv"
 
 	"github.com/andersfylling/disgord"
 	"github.com/hitecherik/Imperial-Online-IV/internal/db"
+	"github.com/hitecherik/Imperial-Online-IV/internal/hermes"
 	"github.com/hitecherik/Imperial-Online-IV/internal/multiroom"
 	"github.com/hitecherik/Imperial-Online-IV/internal/roundrunner"
 	"github.com/hitecherik/Imperial-Online-IV/internal/rounds"
@@ -79,14 +79,17 @@ func init() {
 }
 
 func main() {
-	clients := make([]*disgord.Client, 0, len(opts.botTokens))
+	clients := make([]*hermes.Hermes, 0, len(opts.botTokens))
 	for _, token := range opts.botTokens {
 		client := disgord.New(disgord.Config{
 			BotToken: token,
 		})
-		defer client.StayConnectedUntilInterrupted(context.Background())
+		go client.StayConnectedUntilInterrupted(context.Background())
 
-		clients = append(clients, client)
+		h := hermes.New(client)
+		clients = append(clients, h)
+
+		go h.Listen()
 	}
 
 	var rooms []tabbycat.Room
@@ -106,14 +109,14 @@ func main() {
 
 	verbose("Fetched %v venues\n", len(venues))
 
+	messageCounter := 0
+
 	for _, room := range rooms {
 		venueName := venueMap[room.VenueId]
-		venueCategory, err := opts.categories.Lookup(venueName)
+		category, err := opts.categories.Lookup(venueName)
 		if err != nil {
 			log.Print(err.Error())
 		}
-
-		venueUrl := venueCategory.Url
 
 		for i, team := range room.TeamIds {
 			discords, urlKeys, err := opts.db.ParticipantsFromTeamId(team)
@@ -123,31 +126,66 @@ func main() {
 			bail(err)
 
 			for j, snowflake := range snowflakes {
-				message := fmt.Sprintf("In this round, you will be speaking in **%v** in room **%v**.", room.SideNames[i], venueName)
+				message := fmt.Sprintf(
+					"In this round, you will be speaking in **%v** in room **%v**.%v",
+					room.SideNames[i],
+					venueName,
+					addLinks(tabbycat, category.Url, urlKeys[j]),
+				)
 
-				if venueUrl != "" {
-					message = fmt.Sprintf("%v\n\nThe link to your Zoom room is %v.", message, venueUrl)
-				}
-
-				if urlKeys[j] != "" {
-					privateUrl := tabbycat.PrivateUrlFromKey(urlKeys[j])
-					message = fmt.Sprintf("%v\n\nYour private URL is %v.", message, privateUrl)
-				}
-
-				if err := createDMAndSendMessage(clients[rand.Intn(len(clients))], snowflake, message); err != nil {
-					log.Printf("Error sending message to %v: %v", snowflake, err.Error())
-				}
+				clients[messageCounter%len(clients)].SendMessage(snowflake, message)
+				messageCounter += 1
 			}
 		}
 
-		bail(sendMessagesToJudges(clients, tabbycat, []string{room.ChairId}, "the chair", venueName, venueUrl))
-		bail(sendMessagesToJudges(clients, tabbycat, room.PanellistIds, "a panellist", venueName, venueUrl))
-		bail(sendMessagesToJudges(clients, tabbycat, room.TraineeIds, "a trainee", venueName, venueUrl))
+		judgeIds := append([]string{room.ChairId}, append(room.PanellistIds, room.TraineeIds...)...)
+		discords, urlKeys, err := opts.db.DiscordFromParticipantIds(judgeIds)
+		bail(err)
 
-		verbose("Sent messages for room %v\n", venueName)
+		snowflakes, err := stringsToSnowflakes(discords)
+		bail(err)
+
+		for j, snowflake := range snowflakes {
+			position := "the chair"
+			if j > 0 {
+				position = "a panellist"
+				if j > len(room.PanellistIds) {
+					position = "a trainee"
+				}
+			}
+
+			message := fmt.Sprintf(
+				"In this round, you will be judging as **%v** in room **%v**.%v",
+				position,
+				venueName,
+				addLinks(tabbycat, category.Url, urlKeys[j]),
+			)
+
+			clients[messageCounter%len(clients)].SendMessage(snowflake, message)
+			messageCounter += 1
+
+			verbose("Queued messages for room %v\n", venueName)
+		}
 	}
 
-	os.Exit(0)
+	for _, h := range clients {
+		h.Wait()
+	}
+}
+
+func addLinks(tabbycat *tabbycat.Tabbycat, venueUrl string, urlKey string) string {
+	links := ""
+
+	if venueUrl != "" {
+		links = fmt.Sprintf("\n\nThe link to your Zoom room is %v.", venueUrl)
+	}
+
+	if urlKey != "" {
+		privateUrl := tabbycat.PrivateUrlFromKey(urlKey)
+		links = fmt.Sprintf("%v\n\nYour private URL is %v.", links, privateUrl)
+	}
+
+	return links
 }
 
 func stringToSnowflake(str string) (disgord.Snowflake, error) {
@@ -171,45 +209,4 @@ func stringsToSnowflakes(strs []string) ([]disgord.Snowflake, error) {
 	}
 
 	return snowflakes, nil
-}
-
-func createDMAndSendMessage(client *disgord.Client, snowflake disgord.Snowflake, message string) error {
-	channel, err := client.CreateDM(context.Background(), snowflake)
-	if err != nil {
-		return err
-	}
-
-	_, err = channel.SendMsgString(context.Background(), client, message)
-	return err
-}
-
-func sendMessagesToJudges(clients []*disgord.Client, tabbycat *tabbycat.Tabbycat, ids []string, wingType string, venue string, url string) error {
-	discords, urlKeys, err := opts.db.DiscordFromParticipantIds(ids)
-	if err != nil {
-		return err
-	}
-
-	snowflakes, err := stringsToSnowflakes(discords)
-	if err != nil {
-		return err
-	}
-
-	for i, snowflake := range snowflakes {
-		client := clients[rand.Intn(len(clients))]
-		message := fmt.Sprintf("In this round, you will be judging as **%v** in room **%v**.", wingType, venue)
-
-		if url != "" {
-			message = fmt.Sprintf("%v\n\nThe link to your Zoom room is %v.", message, url)
-		}
-
-		if urlKeys[i] != "" {
-			message = fmt.Sprintf("%v\n\nYour private URL is %v.", message, tabbycat.PrivateUrlFromKey(urlKeys[i]))
-		}
-
-		if err := createDMAndSendMessage(client, snowflake, message); err != nil {
-			log.Printf("Error sending message to %v: %v", snowflake, err.Error())
-		}
-	}
-
-	return nil
 }
