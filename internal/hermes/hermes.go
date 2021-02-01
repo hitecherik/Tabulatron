@@ -10,7 +10,7 @@ import (
 type Hermes struct {
 	client   *disgord.Client
 	queue    chan message
-	finished chan bool
+	finished chan struct{}
 }
 
 type message struct {
@@ -19,7 +19,7 @@ type message struct {
 }
 
 func New(client *disgord.Client) *Hermes {
-	return &Hermes{client, make(chan message), make(chan bool, 1)}
+	return &Hermes{client, make(chan message), make(chan struct{}, 1)}
 }
 
 func (h *Hermes) Listen() {
@@ -37,7 +37,7 @@ func (h *Hermes) Listen() {
 		}
 	}
 
-	h.finished <- true
+	h.finished <- struct{}{}
 }
 
 func (h *Hermes) SendMessage(to disgord.Snowflake, content string) {
