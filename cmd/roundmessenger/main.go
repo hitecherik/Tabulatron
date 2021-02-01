@@ -138,6 +138,15 @@ func main() {
 			}
 		}
 
+		judgeMap := make(map[string]string)
+		judgeMap[room.ChairId] = "the chair"
+		for _, id := range room.PanellistIds {
+			judgeMap[id] = "a panellist"
+		}
+		for _, id := range room.TraineeIds {
+			judgeMap[id] = "a trainee"
+		}
+
 		judgeIds := append([]string{room.ChairId}, append(room.PanellistIds, room.TraineeIds...)...)
 		discords, urlKeys, err := opts.db.DiscordFromParticipantIds(judgeIds)
 		bail(err)
@@ -145,32 +154,19 @@ func main() {
 		snowflakes, err := stringsToSnowflakes(discords)
 		bail(err)
 
-		allPresent := len(snowflakes) == len(judgeIds)
-
 		for j, snowflake := range snowflakes {
-			position := "judging"
-			if allPresent {
-				position = "judging as the **chair**"
-				if j > 0 {
-					position = "judging as a **panellist**"
-					if j > len(room.PanellistIds) {
-						position = "judging as a **trainee**"
-					}
-				}
-			}
-
 			message := fmt.Sprintf(
-				"In this round, you will be %v in room **%v**.%v",
-				position,
+				"In this round, you will be judging as **%v** in room **%v**.%v",
+				judgeMap[judgeIds[j]],
 				venueName,
 				addLinks(tabbycat, category.Url, urlKeys[j]),
 			)
 
 			clients[messageCounter%len(clients)].SendMessage(snowflake, message)
 			messageCounter += 1
-
-			verbose("Queued messages for room %v\n", venueName)
 		}
+
+		verbose("Queued messages for room %v\n", venueName)
 	}
 
 	for _, h := range clients {
