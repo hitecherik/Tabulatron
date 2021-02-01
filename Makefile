@@ -1,6 +1,6 @@
 GO = go
 BINDIR = /usr/local/bin
-ALL = resolver roundrunner roundmessenger pulltabbycat tabulatron tabbycatrounds zoomregistrants
+ALL = roundrunner roundmessenger pulltabbycat tabulatron tabbycatrounds
 LIBRARIES = $(shell find internal pkg -type f -iname '*.go')
 
 all: $(ALL)
@@ -15,9 +15,6 @@ uninstall:
 clean:
 	$(RM) $(ALL) $(TOOLS)
 
-resolver: cmd/resolver/resolver.go $(LIBRARIES)
-	$(GO) build -o $@ $<
-
 roundrunner: cmd/roundrunner/roundrunner.go $(LIBRARIES)
 	$(GO) build -o $@ $<
 
@@ -31,9 +28,6 @@ tabulatron: cmd/tabulatron/tabulatron.go $(LIBRARIES)
 	$(GO) build -o $@ $<
 
 tabbycatrounds: tools/tabbycatrounds/tabbycatrounds.go $(LIBRARIES)
-	$(GO) build -o $@ $<
-
-zoomregistrants: tools/zoomregistrants/zoomregistrants.go $(LIBRARIES)
 	$(GO) build -o $@ $<
 
 .PHONY: all install uninstall clean
