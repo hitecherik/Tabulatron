@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/hitecherik/Imperial-Online-IV/internal/resolver"
-	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
-	"github.com/hitecherik/Imperial-Online-IV/pkg/zoom"
+	"github.com/hitecherik/Tabulatron/internal/resolver"
+	"github.com/hitecherik/Tabulatron/pkg/tabbycat"
+	"github.com/hitecherik/Tabulatron/pkg/zoom"
 	"github.com/joho/godotenv"
 )
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
+	"github.com/hitecherik/Tabulatron/pkg/tabbycat"
 	"github.com/joho/godotenv"
 	"github.com/olekukonko/tablewriter"
 )

@@ -1,4 +1,4 @@
-module github.com/hitecherik/Imperial-Online-IV
+module github.com/hitecherik/Tabulatron
 
 go 1.14
 

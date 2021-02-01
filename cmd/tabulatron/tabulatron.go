@@ -8,9 +8,9 @@ import (
 	"os"
 
 	"github.com/andersfylling/disgord"
-	"github.com/hitecherik/Imperial-Online-IV/internal/db"
-	"github.com/hitecherik/Imperial-Online-IV/internal/tabulatron"
-	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
+	"github.com/hitecherik/Tabulatron/internal/db"
+	"github.com/hitecherik/Tabulatron/internal/tabulatron"
+	"github.com/hitecherik/Tabulatron/pkg/tabbycat"
 	"github.com/joho/godotenv"
 )
 

@@ -6,12 +6,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hitecherik/Imperial-Online-IV/internal/db"
-	"github.com/hitecherik/Imperial-Online-IV/internal/multiroom"
-	"github.com/hitecherik/Imperial-Online-IV/internal/roundrunner"
-	"github.com/hitecherik/Imperial-Online-IV/internal/rounds"
-	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
-	"github.com/hitecherik/Imperial-Online-IV/pkg/zoom"
+	"github.com/hitecherik/Tabulatron/internal/db"
+	"github.com/hitecherik/Tabulatron/internal/multiroom"
+	"github.com/hitecherik/Tabulatron/internal/roundrunner"
+	"github.com/hitecherik/Tabulatron/internal/rounds"
+	"github.com/hitecherik/Tabulatron/pkg/tabbycat"
+	"github.com/hitecherik/Tabulatron/pkg/zoom"
 	"github.com/joho/godotenv"
 )
 

@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/hitecherik/Imperial-Online-IV/pkg/zoom"
+	"github.com/hitecherik/Tabulatron/pkg/zoom"
 	"github.com/joho/godotenv"
 )
 

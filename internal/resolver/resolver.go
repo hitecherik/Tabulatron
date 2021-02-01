@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
-	"github.com/hitecherik/Imperial-Online-IV/pkg/zoom"
+	"github.com/hitecherik/Tabulatron/pkg/tabbycat"
+	"github.com/hitecherik/Tabulatron/pkg/zoom"
 )
 
 type Database struct {

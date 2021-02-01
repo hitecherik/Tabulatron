@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hitecherik/Imperial-Online-IV/pkg/tabbycat"
+	"github.com/hitecherik/Tabulatron/pkg/tabbycat"
 	_ "github.com/mattn/go-sqlite3"
 )
 
