@@ -4,12 +4,13 @@ import (
 	"context"
 	"log"
 	"regexp"
+	"strings"
 
 	"github.com/andersfylling/disgord"
 )
 
 const (
-	checkinRaw      string = `^\s*!checkin\s*$`
+	checkinRaw      string = `^\s*[!1]\s*check[\s-]*in\s*$`
 	startcheckinRaw string = `^\s*!startcheckin\s*$`
 	endcheckinRaw   string = `^\s*!endcheckin\s*$`
 )
@@ -55,13 +56,13 @@ func NewCheckinHandler(t *Tabulatron) *CheckinHandler {
 }
 
 func (h *CheckinHandler) CanHandle(_ disgord.Session, evt *disgord.MessageCreate) bool {
-	message := []byte(evt.Message.Content)
+	message := []byte(strings.ToLower(evt.Message.Content))
 
 	return checkin.Match(message) || startcheckin.Match(message) || endcheckin.Match(message)
 }
 
 func (h *CheckinHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
-	rawMessage := []byte(evt.Message.Content)
+	rawMessage := []byte(strings.ToLower(evt.Message.Content))
 
 	if startcheckin.Match(rawMessage) {
 		if h.checkinStarted {

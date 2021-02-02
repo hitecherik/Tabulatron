@@ -16,6 +16,5 @@ require (
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 	golang.org/x/sys v0.0.0-20200802091954-4b90ce9b60b3 // indirect
-	gopkg.in/square/go-jose.v2 v2.5.1
 	nhooyr.io/websocket v1.8.6 // indirect
 )
