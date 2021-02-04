@@ -1,37 +1,22 @@
-## Welcome to GitHub Pages
+Tabulatron is a system for running online debating tournaments using Discord and Zoom, made by [Alex Nielsen](https://alexnielsen.me).
 
-You can use the [editor on GitHub](https://github.com/hitecherik/Tabulatron/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+If you'd like to know more or have any questions, [drop me an email](mailto:aen@tabulatron.com).
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+### Upcoming tournaments on Tabulatron
 
-### Markdown
+- [LSE Open 2021](https://lseopen.tabulatron.com)
+- Manchester IV 2021
+- Imperial Novices 2021
+- Imperial Open 2021
+- Yale IV 2021
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+### Past tournaments on Tabulatron
 
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/hitecherik/Tabulatron/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+- [London Charity Open](https://londoncharityopen.org)
+- [Imperial Schools 2020](https://schools.imperialdebating.org)
+- [Imperial Novices 2020](https://novices.imperialdebating.org)
+- [Oxford IV 2020](https://oxfordiv.tabulatron.com)
+- [Birmingham ESL 2020](https://birminghamesl.tabulatron.com)
+- [LSE Schools 2020](https://lseschools.tabulatron.com)
+- [Sheffield IV 2020](https://sheffieldiv.tabulatron.com)
+- [Imperial ProAm 2021](https://proam.imperialdebating.org)
