@@ -334,6 +334,16 @@ func (d *Database) DiscordFromParticipantIds(participantIds []string) ([]string,
 	return snowflakes, urlKeys, nil
 }
 
+func (d *Database) AllDiscords() ([]string, error) {
+	query := `
+		SELECT discord
+		FROM participants
+		WHERE discord IS NOT NULL
+	`
+
+	return d.stringsQuery(query)
+}
+
 func (d *Database) Close() error {
 	return d.db.Close()
 }

@@ -1,7 +1,7 @@
 GO = go
 GOFMT = gofmt -s
 BINDIR = /usr/local/bin
-ALL = roundrunner roundmessenger pulltabbycat tabulatron tabbycatrounds
+ALL = roundrunner roundmessenger pulltabbycat tabulatron tabbycatrounds massmessenger
 LIBRARIES = $(shell find internal pkg -type f -iname '*.go')
 
 all: $(ALL)
