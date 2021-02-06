@@ -35,7 +35,7 @@ func init() {
 	var envFile string
 
 	flag.StringVar(&envFile, "env", ".env", "file to read environment variables from")
-	flag.BoolVar(&opts.verbose, "verbose", false, "print additional input")
+	flag.BoolVar(&opts.verbose, "verbose", false, "print additional output")
 	flag.Parse()
 
 	bail(godotenv.Load(envFile))

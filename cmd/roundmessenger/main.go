@@ -49,7 +49,7 @@ func init() {
 	flag.StringVar(&envFile, "env", ".env", "file to read environment variables from")
 	flag.Var(&opts.round, "round", "a round to run")
 	flag.Var(&opts.db, "db", "SQLite3 database representing the tournament")
-	flag.BoolVar(&opts.verbose, "verbose", false, "print additional input")
+	flag.BoolVar(&opts.verbose, "verbose", false, "print additional output")
 	flag.Var(&opts.categories, "categories", "path to the categories TOML document")
 	flag.Parse()
 

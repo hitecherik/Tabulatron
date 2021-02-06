@@ -46,7 +46,7 @@ func init() {
 	flag.Var(&opts.round, "round", "a round to run")
 	flag.Var(&opts.db, "db", "SQLite3 database representing the tournament")
 	flag.Var(&opts.categories, "categories", "path to the categories TOML document")
-	flag.BoolVar(&opts.verbose, "verbose", false, "print additional input")
+	flag.BoolVar(&opts.verbose, "verbose", false, "print additional output")
 	flag.Parse()
 
 	if len(opts.round) == 0 {

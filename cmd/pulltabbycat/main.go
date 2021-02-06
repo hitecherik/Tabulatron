@@ -38,7 +38,7 @@ func init() {
 
 	flag.StringVar(&envFile, "env", ".env", "file to read environment variables from")
 	flag.BoolVar(&opts.redact, "redact", false, "redact participants' names")
-	flag.BoolVar(&opts.verbose, "verbose", false, "print additional input")
+	flag.BoolVar(&opts.verbose, "verbose", false, "print additional output")
 	flag.BoolVar(&opts.reset, "reset", false, "whether to wipe the database")
 	flag.Var(&opts.db, "db", "SQLite3 database representing the tournament")
 	flag.Parse()
