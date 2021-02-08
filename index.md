@@ -4,9 +4,8 @@ If you'd like to know more or have any questions, [drop me an email](mailto:aen@
 
 ### Upcoming tournaments
 
-- [LSE Open 2021](https://lseopen.tabulatron.com)
-- Manchester IV 2021
-- Imperial Novices 2021
+- [Manchester IV 2021](https://manchesteriv.tabulatron.com)
+- Imperial Juniors 2021
 - Imperial Open 2021
 - Yale IV 2021
 
@@ -20,3 +19,4 @@ If you'd like to know more or have any questions, [drop me an email](mailto:aen@
 - [LSE Schools 2020](https://lseschools.tabulatron.com)
 - [Sheffield IV 2020](https://sheffieldiv.tabulatron.com)
 - [Imperial ProAm 2021](https://proam.imperialdebating.org)
+- [LSE Open 2021](https://lseopen.tabulatron.com)
