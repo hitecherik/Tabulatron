@@ -1,10 +1,10 @@
-name: Build 
+name: Build
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:
@@ -17,8 +17,8 @@ jobs:
       with:
         go-version: 1.15
 
-    - name: Check format 
+    - name: Check format
       run: make checkfmt
 
-    - name: Build 
+    - name: Build
       run: make all
