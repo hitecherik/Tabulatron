@@ -161,16 +161,6 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 		return
 	}
 
-	if code == "123456" {
-		h.t.ReplyMessage(
-			evt.Message,
-			"please replace `123456` in your message with your registration code. If you don't know what this is, ask in %v.",
-			h.regHelpChannel.Mention(),
-		)
-		h.t.RejectMessage(s, evt.Message)
-		return
-	}
-
 	if len(code) != 6 {
 		h.t.ReplyMessage(
 			evt.Message,
@@ -183,6 +173,16 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	_, name, speaker, err := h.t.database.ParticipantFromBarcode(code, author.ID.String())
 
 	if err != nil {
+		if code == "123456" {
+			h.t.ReplyMessage(
+				evt.Message,
+				"please replace `123456` in your message with your registration code. If you don't know what this is, ask in %v.",
+				h.regHelpChannel.Mention(),
+			)
+			h.t.RejectMessage(s, evt.Message)
+			return
+		}
+
 		log.Printf("error registering speaker: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "there was an error registering you. Please check the code you entered and try again.")
 		h.t.RejectMessage(s, evt.Message)
