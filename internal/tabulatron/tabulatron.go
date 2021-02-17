@@ -7,6 +7,7 @@ import (
 
 	"github.com/andersfylling/disgord"
 	"github.com/hitecherik/Tabulatron/internal/db"
+	"github.com/hitecherik/Tabulatron/internal/pundit"
 	"github.com/hitecherik/Tabulatron/pkg/tabbycat"
 )
 
@@ -20,10 +21,11 @@ type Tabulatron struct {
 	database *db.Database
 	tabbycat *tabbycat.Tabbycat
 	handlers []MessageHandler
+	pundit   *pundit.Pundit
 }
 
-func New(discord *disgord.Client, database *db.Database, tabbycat *tabbycat.Tabbycat) *Tabulatron {
-	t := &Tabulatron{discord, database, tabbycat, []MessageHandler{}}
+func New(discord *disgord.Client, database *db.Database, tabbycat *tabbycat.Tabbycat, p *pundit.Pundit) *Tabulatron {
+	t := &Tabulatron{discord, database, tabbycat, []MessageHandler{}, p}
 	t.handlers = append(t.handlers, NewRegHandler(t), NewCheckinHandler(t), NewClearHandler(t), NewMotionHandler(t))
 
 	return t
@@ -79,7 +81,5 @@ func (t *Tabulatron) CreateDMAndSendMessage(snowflake disgord.Snowflake, message
 }
 
 func (t *Tabulatron) reactMessage(s disgord.Session, message *disgord.Message, reaction string) {
-	if err := message.React(context.Background(), s, reaction); err != nil {
-		log.Printf("error reacting: %v\n", err.Error())
-	}
+	t.pundit.SendReaction(message.ChannelID, message.ID, reaction)
 }

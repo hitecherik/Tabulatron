@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/andersfylling/disgord"
 	"github.com/hitecherik/Tabulatron/internal/db"
+	"github.com/hitecherik/Tabulatron/internal/pundit"
 	"github.com/hitecherik/Tabulatron/internal/tabulatron"
 	"github.com/hitecherik/Tabulatron/pkg/tabbycat"
 	"github.com/joho/godotenv"
@@ -59,20 +62,32 @@ func init() {
 }
 
 func main() {
+	p := pundit.Pundit{}
 	for _, token := range opts.helperBotTokens {
 		helperClient := disgord.New(disgord.Config{
 			BotToken: token,
 		})
 		go helperClient.StayConnectedUntilInterrupted(context.Background())
+		p.AddClient(helperClient)
 	}
 
 	client := disgord.New(disgord.Config{
 		BotToken: opts.botToken,
 	})
 	defer client.StayConnectedUntilInterrupted(context.Background())
+	p.AddClient(client)
+
+	// Make sure all reactions are sent before Tabulatron exits
+	signals := make(chan os.Signal)
+	go func() {
+		<-signals
+		p.Wait()
+		os.Exit(0)
+	}()
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 
 	tabbycat := tabbycat.New(opts.tabbycatApiKey, opts.tabbycatUrl, opts.tabbycatSlug)
-	tron := tabulatron.New(client, &opts.db, tabbycat)
+	tron := tabulatron.New(client, &opts.db, tabbycat, &p)
 
 	me, err := client.Myself(context.Background())
 	panic(err)

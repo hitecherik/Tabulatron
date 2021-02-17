@@ -7,6 +7,8 @@ import (
 	"github.com/andersfylling/disgord"
 )
 
+const bufferSize int = 16
+
 type Hermes struct {
 	client   *disgord.Client
 	queue    chan message
@@ -19,7 +21,7 @@ type message struct {
 }
 
 func New(client *disgord.Client) *Hermes {
-	return &Hermes{client, make(chan message), make(chan struct{}, 1)}
+	return &Hermes{client, make(chan message, bufferSize), make(chan struct{}, 1)}
 }
 
 func (h *Hermes) Listen() {
