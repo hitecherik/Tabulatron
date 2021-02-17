@@ -4,7 +4,7 @@ If you'd like to know more or have any questions, [drop me an email](mailto:aen@
 
 ### Upcoming tournaments
 
-- Imperial Juniors 2021
+- [Imperial Juniors 2021](https://juniors.imperialdebating.org)
 - Imperial Open 2021
 - Yale IV 2021
 
