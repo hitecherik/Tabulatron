@@ -303,11 +303,17 @@ func (d *Database) ParticipantsFromTeamId(teamId string) ([]string, []string, er
 }
 
 func (d *Database) DiscordFromParticipantIds(participantIds []string) ([]string, []string, error) {
+	ordering := make([]string, 0, len(participantIds))
+	for i, id := range participantIds {
+		ordering = append(ordering, fmt.Sprintf("WHEN %v THEN %v", id, i))
+	}
+
 	query := fmt.Sprintf(`
-		SELECT discord, urlkey
+		SELECT COALESCE(discord, ""), urlkey
 		FROM participants
-		WHERE id IN (%v) AND discord IS NOT NULL
-	`, strings.Join(participantIds, ","))
+		WHERE id IN (%v)
+		ORDER BY CASE id %v END
+	`, strings.Join(participantIds, ","), strings.Join(ordering, " "))
 
 	rows, err := d.db.Query(query)
 	if err != nil {

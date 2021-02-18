@@ -138,26 +138,29 @@ func main() {
 			}
 		}
 
-		judgeMap := make(map[string]string)
-		judgeMap[room.ChairId] = "the chair"
-		for _, id := range room.PanellistIds {
-			judgeMap[id] = "a panellist"
-		}
-		for _, id := range room.TraineeIds {
-			judgeMap[id] = "a trainee"
-		}
-
 		judgeIds := append([]string{room.ChairId}, append(room.PanellistIds, room.TraineeIds...)...)
 		discords, urlKeys, err := opts.db.DiscordFromParticipantIds(judgeIds)
 		bail(err)
 
-		snowflakes, err := stringsToSnowflakes(discords)
-		bail(err)
+		for j, discord := range discords {
+			if discord == "" {
+				log.Printf("Adjudicator %v has no discord ID.\n", judgeIds[j])
+				continue
+			}
 
-		for j, snowflake := range snowflakes {
+			snowflake, err := stringToSnowflake(discord)
+			bail(err)
+
+			position := "a panellist"
+			if j == 0 {
+				position = "the chair"
+			} else if j > len(room.PanellistIds) {
+				position = "a trainee"
+			}
+
 			message := fmt.Sprintf(
 				"In this round, you will be judging as **%v** in room **%v**.%v",
-				judgeMap[judgeIds[j]],
+				position,
 				venueName,
 				addLinks(tabbycat, category.Url, urlKeys[j]),
 			)
