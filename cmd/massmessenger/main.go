@@ -5,11 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/andersfylling/disgord"
 	"github.com/hitecherik/Tabulatron/internal/db"
 	"github.com/hitecherik/Tabulatron/internal/hermes"
+	"github.com/hitecherik/Tabulatron/internal/util"
 	"github.com/joho/godotenv"
 )
 
@@ -84,7 +84,7 @@ func main() {
 	discords, err := opts.db.AllDiscords()
 	bail(err)
 
-	snowflakes, err := stringsToSnowflakes(discords)
+	snowflakes, err := util.StringsToSnowflakes(discords)
 	bail(err)
 
 	for i, snowflake := range snowflakes {
@@ -92,27 +92,4 @@ func main() {
 	}
 
 	verbose("Queued %v messages.\n", len(snowflakes))
-}
-
-func stringToSnowflake(str string) (disgord.Snowflake, error) {
-	snowflake, err := strconv.ParseUint(str, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return disgord.NewSnowflake(snowflake), nil
-}
-
-func stringsToSnowflakes(strs []string) ([]disgord.Snowflake, error) {
-	snowflakes := make([]disgord.Snowflake, 0, len(strs))
-	for _, discord := range strs {
-		snowflake, err := stringToSnowflake(discord)
-		if err != nil {
-			return nil, err
-		}
-
-		snowflakes = append(snowflakes, snowflake)
-	}
-
-	return snowflakes, nil
 }

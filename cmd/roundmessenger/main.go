@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/andersfylling/disgord"
 	"github.com/hitecherik/Tabulatron/internal/db"
@@ -14,6 +13,7 @@ import (
 	"github.com/hitecherik/Tabulatron/internal/multiroom"
 	"github.com/hitecherik/Tabulatron/internal/roundrunner"
 	"github.com/hitecherik/Tabulatron/internal/rounds"
+	"github.com/hitecherik/Tabulatron/internal/util"
 	"github.com/hitecherik/Tabulatron/pkg/tabbycat"
 	"github.com/joho/godotenv"
 )
@@ -122,7 +122,7 @@ func main() {
 			discords, urlKeys, err := opts.db.ParticipantsFromTeamId(team)
 			bail(err)
 
-			snowflakes, err := stringsToSnowflakes(discords)
+			snowflakes, err := util.StringsToSnowflakes(discords)
 			bail(err)
 
 			for j, snowflake := range snowflakes {
@@ -148,7 +148,7 @@ func main() {
 				continue
 			}
 
-			snowflake, err := stringToSnowflake(discord)
+			snowflake, err := util.StringToSnowflake(discord)
 			bail(err)
 
 			position := "a panellist"
@@ -190,27 +190,4 @@ func addLinks(tabbycat *tabbycat.Tabbycat, venueUrl string, urlKey string) strin
 	}
 
 	return links
-}
-
-func stringToSnowflake(str string) (disgord.Snowflake, error) {
-	snowflake, err := strconv.ParseUint(str, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return disgord.NewSnowflake(snowflake), nil
-}
-
-func stringsToSnowflakes(strs []string) ([]disgord.Snowflake, error) {
-	snowflakes := make([]disgord.Snowflake, 0, len(strs))
-	for _, discord := range strs {
-		snowflake, err := stringToSnowflake(discord)
-		if err != nil {
-			return nil, err
-		}
-
-		snowflakes = append(snowflakes, snowflake)
-	}
-
-	return snowflakes, nil
 }

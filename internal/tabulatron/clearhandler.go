@@ -4,9 +4,9 @@ import (
 	"context"
 	"log"
 	"regexp"
-	"strconv"
 
 	"github.com/andersfylling/disgord"
+	"github.com/hitecherik/Tabulatron/internal/util"
 )
 
 const (
@@ -68,7 +68,7 @@ func (h *ClearHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 		return
 	}
 
-	snowflake, err := stringToSnowflake(discord)
+	snowflake, err := util.StringToSnowflake(discord)
 	if err != nil {
 		log.Printf("error converting to snowflake: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "there was an error resetting the user.")
@@ -118,13 +118,4 @@ func (h *ClearHandler) hasTabRole(member *disgord.Member) bool {
 	}
 
 	return false
-}
-
-func stringToSnowflake(str string) (disgord.Snowflake, error) {
-	snowflake, err := strconv.ParseUint(str, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return disgord.NewSnowflake(snowflake), nil
 }
