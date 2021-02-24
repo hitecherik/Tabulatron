@@ -6,7 +6,7 @@ If you'd like to know more or have any questions, [drop me an email](mailto:aen@
 
 - [Imperial Juniors 2021](https://juniors.imperialdebating.org)
 - Imperial Open 2021
-- Yale IV 2021
+- [Yale IV 2021](https://yaleiv.tabulatron.com/2021/)
 
 ### Past tournaments
 
