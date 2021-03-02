@@ -4,8 +4,7 @@ If you'd like to know more or have any questions, [drop me an email](mailto:aen@
 
 ### Upcoming tournaments
 
-- [Imperial Juniors 2021](https://juniors.imperialdebating.org)
-- Imperial Open 2021
+- [Imperial Open 2021](https://open.imperialdebating.org)
 - [Yale IV 2021](https://yaleiv.tabulatron.com/2021/)
 
 ### Past tournaments
@@ -20,3 +19,4 @@ If you'd like to know more or have any questions, [drop me an email](mailto:aen@
 - [Imperial ProAm 2021](https://proam.imperialdebating.org)
 - [LSE Open 2021](https://lseopen.tabulatron.com)
 - [Manchester IV 2021](https://manchesteriv.tabulatron.com)
+- [Imperial Juniors 2021](https://juniors.imperialdebating.org)
