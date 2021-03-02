@@ -143,30 +143,6 @@ func (d *Database) AddParticipants(speakers bool, participants []tabbycat.Partic
 	return nil
 }
 
-func (d *Database) UpdateDiscordId(barcode string, discordId string) (bool, error) {
-	query := `
-		UPDATE participants
-		SET discord = ?
-		WHERE barcode = ?
-	`
-
-	result, err := d.db.Exec(query, discordId, barcode)
-	if err != nil {
-		return true, err
-	}
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return true, err
-	}
-
-	if rows != 1 {
-		return false, fmt.Errorf("user with barcode %v doesn't exist", barcode)
-	}
-
-	return true, nil
-}
-
 func (d *Database) ParticipantFromBarcode(barcode string, discord string) (uint, string, bool, error) {
 	query := `
 		SELECT p.id, "[" || COALESCE(emoji, "J")  || "] " || name, type
