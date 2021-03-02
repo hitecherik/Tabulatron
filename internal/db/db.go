@@ -37,6 +37,13 @@ func New(file string) (*Database, error) {
 			PRIMARY KEY (id, participant),
 			FOREIGN KEY (participant) REFERENCES participants (id)
 		);
+		CREATE TABLE IF NOT EXISTS reglog (
+			id INTEGER NOT NULL PRIMARY KEY,
+			time TEXT DEFAULT (DATETIME()),
+			type TEXT NOT NULL,
+			participant INTEGER NOT NULL,
+			FOREIGN KEY (participant) REFERENCES participants (id)
+		);
 	`
 
 	if _, err := db.Exec(query); err != nil {
@@ -50,6 +57,7 @@ func (d *Database) Reset() error {
 	query := `
 		DELETE FROM teams;
 		DELETE FROM participants;
+		DELETE FROM reglog;
 	`
 
 	_, err := d.db.Exec(query)
@@ -187,11 +195,27 @@ func (d *Database) ParticipantFromBarcode(barcode string, discord string) (uint,
 		return 0, "", false, err
 	}
 
+	query = `
+		INSERT INTO reglog (type, participant)
+		VALUES ("arrival", ?)
+	`
+	_, _ = d.db.Exec(query, id)
+
 	return id, name, category == "speaker", nil
 }
 
 func (d *Database) ClearParticipantFromBarcode(barcode string) (string, error) {
-	query := fmt.Sprintf(`
+	query := `
+		INSERT INTO reglog (type, participant)
+		SELECT "departure", id
+		FROM participants
+		WHERE barcode=?
+		LIMIT 1
+	`
+
+	_, _ = d.db.Exec(query, barcode)
+
+	query = fmt.Sprintf(`
 		SELECT discord
 		FROM participants
 		WHERE barcode='%v'
@@ -240,6 +264,15 @@ func (d *Database) ParticipantFromDiscord(discord string) (uint, bool, error) {
 
 func (d *Database) ClearParticipantFromDiscord(discord string) error {
 	query := `
+		INSERT INTO reglog (type, participant)
+		SELECT "departure", id
+		FROM participants
+		WHERE discord = ?
+	`
+
+	_, _ = d.db.Exec(query, discord)
+
+	query = `
 		UPDATE participants
 		SET discord = NULL
 		WHERE discord = ?
