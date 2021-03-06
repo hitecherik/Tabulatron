@@ -9,21 +9,14 @@ import (
 	"github.com/andersfylling/disgord"
 )
 
-const (
-	registerRaw       string = `^[1!]?register[^\d]*(\d+)$`
-	numbersRaw        string = `^\d{6}$`
-	startregRaw       string = `^!startreg$`
-	linkRaw           string = `!link<@!\d+>(\d{6})$`
-	whitespaceRaw     string = `\s`
-	maxNicknameLength int    = 32
-)
+const maxNicknameLength int = 32
 
 var (
-	register   *regexp.Regexp
-	numbers    *regexp.Regexp
-	startreg   *regexp.Regexp
-	link       *regexp.Regexp
-	whitespace *regexp.Regexp
+	register   *regexp.Regexp = regexp.MustCompile(`^[1!]?register[^\d]*(\d+)$`)
+	numbers    *regexp.Regexp = regexp.MustCompile(`^\d{6}$`)
+	startreg   *regexp.Regexp = regexp.MustCompile(`^!startreg$`)
+	link       *regexp.Regexp = regexp.MustCompile(`!link<@!\d+>(\d{6})$`)
+	whitespace *regexp.Regexp = regexp.MustCompile(`\s`)
 )
 
 type RegHandler struct {
@@ -34,31 +27,6 @@ type RegHandler struct {
 	speakerRole    *disgord.Role
 	judgeRole      *disgord.Role
 	tabRole        *disgord.Role
-}
-
-func bail(err error) {
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-}
-
-func init() {
-	var err error
-
-	register, err = regexp.Compile(registerRaw)
-	bail(err)
-
-	numbers, err = regexp.Compile(numbersRaw)
-	bail(err)
-
-	startreg, err = regexp.Compile(startregRaw)
-	bail(err)
-
-	link, err = regexp.Compile(linkRaw)
-	bail(err)
-
-	whitespace, err = regexp.Compile(whitespaceRaw)
-	bail(err)
 }
 
 func NewRegHandler(t *Tabulatron) *RegHandler {
@@ -102,7 +70,7 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	if startreg.Match(messageContent) {
 		if h.regStarted {
 			h.t.ReplyMessage(evt.Message, "I can't do that. Registration has already started.")
-			h.t.RejectMessage(s, evt.Message)
+			h.t.RejectMessage(evt.Message)
 			return
 		}
 
@@ -112,19 +80,19 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 		}
 
 		if h.hasTabRole(evt.Message.Member) {
-			h.t.AcknowledgeMessage(s, evt.Message)
+			h.t.AcknowledgeMessage(evt.Message)
 			h.regStarted = true
 			return
 		}
 
 		h.t.ReplyMessage(evt.Message, "you can't ask me to do that.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
 	if linkRegistration && !h.hasTabRole(evt.Message.Member) {
 		h.t.ReplyMessage(evt.Message, "you can't ask me to do that.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
@@ -147,7 +115,7 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 
 	if !h.regStarted {
 		h.t.ReplyMessage(evt.Message, "I can't do that. Registration hasn't started yet.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
@@ -157,7 +125,7 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 			"you can't do that here. Registration can only happen in the %v channel.",
 			h.regChannel.Mention(),
 		)
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
@@ -166,7 +134,7 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 			evt.Message,
 			"please double-check your registration code – it should be six digits long.",
 		)
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
@@ -179,17 +147,17 @@ func (h *RegHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 				"please replace `123456` in your message with your registration code. If you don't know what this is, ask in %v.",
 				h.regHelpChannel.Mention(),
 			)
-			h.t.RejectMessage(s, evt.Message)
+			h.t.RejectMessage(evt.Message)
 			return
 		}
 
 		log.Printf("error registering speaker: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "there was an error registering you. Please check the code you entered and try again.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
-	h.t.AcknowledgeMessage(s, evt.Message)
+	h.t.AcknowledgeMessage(evt.Message)
 
 	role := h.judgeRole
 	if speaker {

@@ -112,7 +112,7 @@ func main() {
 	})
 
 	client.On(disgord.EvtGuildMemberRemove, func(s disgord.Session, evt *disgord.GuildMemberRemove) {
-		if guildId == 0 || int(evt.GuildID) == 0 {
+		if guildId == 0 || int(evt.GuildID) == 0 || int(evt.GuildID) != guildId {
 			return
 		}
 

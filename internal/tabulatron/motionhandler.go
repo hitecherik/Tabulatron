@@ -13,42 +13,20 @@ import (
 )
 
 const (
-	infoslideRaw string        = `^!infoslide\s*\d+$`
-	motionRaw    string        = `^!motion\s*\d+$`
-	roundIdRaw   string        = `\s*(\d+)$`
-	prepMinutes  int           = 15
-	minute       time.Duration = time.Second * 60
+	prepMinutes int           = 15
+	minute      time.Duration = time.Second * 60
 )
 
 var (
-	infoslide *regexp.Regexp
-	motion    *regexp.Regexp
-	roundId   *regexp.Regexp
+	infoslide *regexp.Regexp = regexp.MustCompile(`^!infoslide\s*\d+$`)
+	motion    *regexp.Regexp = regexp.MustCompile(`^!motion\s*\d+$`)
+	roundId   *regexp.Regexp = regexp.MustCompile(`\s*(\d+)$`)
 )
 
 type MotionHandler struct {
 	t              *Tabulatron
 	tabRole        *disgord.Role
 	motionsChannel *disgord.Channel
-}
-
-func init() {
-	var err error
-
-	infoslide, err = regexp.Compile(infoslideRaw)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	motion, err = regexp.Compile(motionRaw)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	roundId, err = regexp.Compile(roundIdRaw)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
 }
 
 func NewMotionHandler(t *Tabulatron) *MotionHandler {
@@ -73,7 +51,7 @@ func (h *MotionHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 
 	if !h.hasTabRole(evt.Message.Member) {
 		h.t.ReplyMessage(evt.Message, "you can't ask me to do that.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
@@ -87,7 +65,7 @@ func (h *MotionHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	if err != nil {
 		log.Printf("error extracting round: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "there was an error parsing your request.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
@@ -95,7 +73,7 @@ func (h *MotionHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	if err != nil {
 		log.Printf("error fetching round: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "I couldn't find any information about that round.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 

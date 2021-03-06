@@ -9,26 +9,11 @@ import (
 	"github.com/hitecherik/Tabulatron/internal/util"
 )
 
-const (
-	clearRaw string = `^!clear\s*(\d{6})$`
-)
-
-var (
-	clear *regexp.Regexp
-)
+var clear *regexp.Regexp = regexp.MustCompile(`^!clear\s*(\d{6})$`)
 
 type ClearHandler struct {
 	t       *Tabulatron
 	tabRole *disgord.Role
-}
-
-func init() {
-	var err error
-
-	clear, err = regexp.Compile(clearRaw)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
 }
 
 func NewClearHandler(t *Tabulatron) *ClearHandler {
@@ -53,7 +38,7 @@ func (h *ClearHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 
 	if !h.hasTabRole(evt.Message.Member) {
 		h.t.ReplyMessage(evt.Message, "you can't ask me to do that.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
@@ -64,7 +49,7 @@ func (h *ClearHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	if err != nil {
 		log.Printf("error clearing participant: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "there was an error doing that.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
@@ -72,7 +57,7 @@ func (h *ClearHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	if err != nil {
 		log.Printf("error converting to snowflake: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "there was an error resetting the user.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
@@ -84,11 +69,11 @@ func (h *ClearHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	if err != nil {
 		log.Printf("error resetting user: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "there was an error resetting the user.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
-	h.t.AcknowledgeMessage(s, evt.Message)
+	h.t.AcknowledgeMessage(evt.Message)
 }
 
 func (h *ClearHandler) populateRoles(evt *disgord.MessageCreate) error {

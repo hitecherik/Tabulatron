@@ -59,12 +59,12 @@ func (t *Tabulatron) ReplyMessage(message *disgord.Message, reply string, a ...i
 	return m
 }
 
-func (t *Tabulatron) AcknowledgeMessage(s disgord.Session, message *disgord.Message) {
-	t.reactMessage(s, message, "✅")
+func (t *Tabulatron) AcknowledgeMessage(message *disgord.Message) {
+	t.reactMessage(message, "✅")
 }
 
-func (t *Tabulatron) RejectMessage(s disgord.Session, message *disgord.Message) {
-	t.reactMessage(s, message, "❌")
+func (t *Tabulatron) RejectMessage(message *disgord.Message) {
+	t.reactMessage(message, "❌")
 }
 
 func (t *Tabulatron) CreateDMAndSendMessage(snowflake disgord.Snowflake, message string) {
@@ -80,6 +80,6 @@ func (t *Tabulatron) CreateDMAndSendMessage(snowflake disgord.Snowflake, message
 	}
 }
 
-func (t *Tabulatron) reactMessage(s disgord.Session, message *disgord.Message, reaction string) {
+func (t *Tabulatron) reactMessage(message *disgord.Message, reaction string) {
 	t.pundit.SendReaction(message.ChannelID, message.ID, reaction)
 }

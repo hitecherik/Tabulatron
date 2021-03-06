@@ -9,16 +9,11 @@ import (
 	"github.com/andersfylling/disgord"
 )
 
-const (
-	checkinRaw      string = `^\s*[!1]\s*check[\s-]*in\s*$`
-	startcheckinRaw string = `^\s*!startcheckin\s*$`
-	endcheckinRaw   string = `^\s*!endcheckin\s*$`
-)
-
 var (
-	checkin      *regexp.Regexp
-	startcheckin *regexp.Regexp
-	endcheckin   *regexp.Regexp
+	checkin      *regexp.Regexp = regexp.MustCompile(`^\s*[!1]\s*ch[ie]ck[\s-]*[ie]n\s*$`)
+	chicken      *regexp.Regexp = regexp.MustCompile(`chicken`)
+	startcheckin *regexp.Regexp = regexp.MustCompile(`^\s*!startcheckin\s*$`)
+	endcheckin   *regexp.Regexp = regexp.MustCompile(`^\s*!endcheckin\s*$`)
 )
 
 type CheckinHandler struct {
@@ -27,25 +22,6 @@ type CheckinHandler struct {
 	checkinChannel  *disgord.Channel
 	techHelpChannel *disgord.Channel
 	tabRole         *disgord.Role
-}
-
-func init() {
-	var err error
-
-	checkin, err = regexp.Compile(checkinRaw)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	startcheckin, err = regexp.Compile(startcheckinRaw)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	endcheckin, err = regexp.Compile(endcheckinRaw)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
 }
 
 func NewCheckinHandler(t *Tabulatron) *CheckinHandler {
@@ -67,7 +43,7 @@ func (h *CheckinHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	if startcheckin.Match(rawMessage) {
 		if h.checkinStarted {
 			h.t.ReplyMessage(evt.Message, "I can't do that. Check-in has already started.")
-			h.t.RejectMessage(s, evt.Message)
+			h.t.RejectMessage(evt.Message)
 			return
 		}
 
@@ -82,31 +58,31 @@ func (h *CheckinHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 		}
 
 		if h.hasTabRole(evt.Message.Member) {
-			h.t.AcknowledgeMessage(s, evt.Message)
+			h.t.AcknowledgeMessage(evt.Message)
 			h.checkinStarted = true
 			return
 		}
 
 		h.t.ReplyMessage(evt.Message, "you can't ask me to do that.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
 	if !h.checkinStarted {
 		h.t.ReplyMessage(evt.Message, "I can't do that. Check-in hasn't started yet.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
 	if endcheckin.Match(rawMessage) {
 		if h.hasTabRole(evt.Message.Member) {
-			h.t.AcknowledgeMessage(s, evt.Message)
+			h.t.AcknowledgeMessage(evt.Message)
 			h.checkinStarted = false
 			return
 		}
 
 		h.t.ReplyMessage(evt.Message, "you can't ask me to do that.")
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
@@ -116,7 +92,7 @@ func (h *CheckinHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 			"you can't do that here. Check in can only happen in the %v channel.",
 			h.checkinChannel.Mention(),
 		)
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
@@ -124,18 +100,21 @@ func (h *CheckinHandler) Handle(s disgord.Session, evt *disgord.MessageCreate) {
 	if err != nil {
 		log.Printf("error finding speaker: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "there was an error checking you in. Please ask for help in %v.", h.techHelpChannel.Mention())
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
 	if err := h.t.tabbycat.CheckIn(id, speaker); err != nil {
 		log.Printf("error checking in speaker: %v", err.Error())
 		h.t.ReplyMessage(evt.Message, "there was an error checking you in. Please ask for help in %v.", h.techHelpChannel.Mention())
-		h.t.RejectMessage(s, evt.Message)
+		h.t.RejectMessage(evt.Message)
 		return
 	}
 
-	h.t.AcknowledgeMessage(s, evt.Message)
+	h.t.AcknowledgeMessage(evt.Message)
+	if chicken.Match(rawMessage) {
+		h.t.reactMessage(evt.Message, "🐓")
+	}
 }
 
 func (h *CheckinHandler) populateChannels(evt *disgord.MessageCreate) error {
