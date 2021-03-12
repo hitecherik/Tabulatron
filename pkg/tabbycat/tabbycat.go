@@ -283,6 +283,11 @@ func (t *Tabbycat) GetVenues() ([]Venue, error) {
 	return venues, nil
 }
 
+func (t *Tabbycat) CheckOutAdjudicator(id uint) error {
+	_, err := t.makeRequest(http.MethodDelete, fmt.Sprintf("adjudicators/%v/checkin", id), nil)
+	return err
+}
+
 func (t *Tabbycat) CheckIn(id uint, speaker bool) error {
 	category := "adjudicators"
 	if speaker {
