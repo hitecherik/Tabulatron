@@ -14,7 +14,7 @@ type Allocation struct {
 	Allocation [][]string
 }
 
-func Allocate(database db.Database, venues []tabbycat.Venue, rooms []tabbycat.Room, categories multiroom.Categories) ([]Allocation, error) {
+func Allocate(database db.Database, venues []tabbycat.Venue, rooms []tabbycat.Room, categories multiroom.Categories, adjsOnly bool) ([]Allocation, error) {
 	allocations := make(map[string]*Allocation)
 
 	for _, category := range categories {
@@ -34,10 +34,12 @@ func Allocate(database db.Database, venues []tabbycat.Venue, rooms []tabbycat.Ro
 
 		judgeIds := append(append([]string{room.ChairId}, room.PanellistIds...), room.TraineeIds...)
 
-		if emails, err := database.TeamEmails(room.TeamIds); err == nil && len(emails) != 0 {
-			allocations[category.Name].Allocation = appendEmails(allocations[category.Name].Allocation, name, emails)
-		} else if err != nil {
-			return nil, err
+		if !adjsOnly {
+			if emails, err := database.TeamEmails(room.TeamIds); err == nil && len(emails) != 0 {
+				allocations[category.Name].Allocation = appendEmails(allocations[category.Name].Allocation, name, emails)
+			} else if err != nil {
+				return nil, err
+			}
 		}
 
 		if emails, err := database.ParticipantEmails(judgeIds); err == nil && len(emails) != 0 {

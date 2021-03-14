@@ -22,6 +22,7 @@ type options struct {
 	tabbycatUrl    string
 	tabbycatSlug   string
 	categories     multiroom.Categories
+	adjsOnly       bool
 	verbose        bool
 }
 
@@ -46,6 +47,7 @@ func init() {
 	flag.Var(&opts.round, "round", "a round to run")
 	flag.Var(&opts.db, "db", "SQLite3 database representing the tournament")
 	flag.Var(&opts.categories, "categories", "path to the categories TOML document")
+	flag.BoolVar(&opts.adjsOnly, "adjs-only", false, "only include adjudicators in CSVs")
 	flag.BoolVar(&opts.verbose, "verbose", false, "print additional output")
 	flag.Parse()
 
@@ -80,7 +82,7 @@ func main() {
 
 	verbose("Fetched %v venues\n", len(venues))
 
-	assignments, err := roundrunner.Allocate(opts.db, venues, rooms, opts.categories)
+	assignments, err := roundrunner.Allocate(opts.db, venues, rooms, opts.categories, opts.adjsOnly)
 	bail(err)
 
 	written := 0
