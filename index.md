@@ -4,13 +4,12 @@ If you'd like to know more or have any questions, [drop me an email](mailto:aen@
 
 ### Upcoming tournaments
 
-- [Imperial Open 2021](https://open.imperialdebating.org)
-- [Yale IV 2021](https://yaleiv.tabulatron.com/2021/)
+- [Lubart Open 2021](https://lubart.tabulatron.com)
 
 ### Past tournaments
 
 - [London Charity Open](https://londoncharityopen.org)
-- [Imperial Schools 2020](https://schools.imperialdebating.org)
+- [Imperial Schools 2020](https://schools.imperialdebating.org/2020/)
 - [Imperial Novices 2020](https://novices.imperialdebating.org)
 - [Oxford IV 2020](https://oxfordiv.tabulatron.com)
 - [Birmingham ESL 2020](https://birminghamesl.tabulatron.com)
@@ -20,3 +19,7 @@ If you'd like to know more or have any questions, [drop me an email](mailto:aen@
 - [LSE Open 2021](https://lseopen.tabulatron.com)
 - [Manchester IV 2021](https://manchesteriv.tabulatron.com)
 - [Imperial Juniors 2021](https://juniors.imperialdebating.org)
+- [Imperial Open 2021](https://open.imperialdebating.org)
+- [Yale IV 2021](https://yaleiv.tabulatron.com/2021/)
+- [Imperial Schools 2021](https://schools.imperialdebating.org/2021/)
+- [Charity Fantasy Open 2021](https://fantasy.tabulatron.com/2021/)
