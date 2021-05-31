@@ -4,7 +4,7 @@ If you'd like to know more or have any questions, [drop me an email](mailto:aen@
 
 ### Upcoming tournaments
 
-- Imperial IV 2021
+- [Imperial IV 2021](https://iv.imperialdebating.org)
 - LSE IV 2021
 
 ### Past tournaments
