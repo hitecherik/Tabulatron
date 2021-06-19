@@ -4,7 +4,6 @@ If you'd like to know more or have any questions, [drop me an email](mailto:aen@
 
 ### Upcoming tournaments
 
-- [Imperial IV 2021](https://iv.imperialdebating.org)
 - LSE IV 2021
 
 ### Past tournaments
@@ -25,3 +24,4 @@ If you'd like to know more or have any questions, [drop me an email](mailto:aen@
 - [Imperial Schools 2021](https://schools.imperialdebating.org/2021/)
 - [Charity Fantasy Open 2021](https://fantasy.tabulatron.com)
 - [Lubart Open 2021](https://lubart.tabulatron.com)
+- [Imperial IV 2021](https://iv.imperialdebating.org)
