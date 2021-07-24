@@ -2,10 +2,6 @@ Tabulatron is a system for running online debating tournaments using Discord and
 
 If you'd like to know more or have any questions, [drop me an email](mailto:aen@tabulatron.com).
 
-### Upcoming tournaments
-
-- LSE IV 2021
-
 ### Past tournaments
 
 - [London Charity Open](https://londoncharityopen.org)
@@ -25,3 +21,4 @@ If you'd like to know more or have any questions, [drop me an email](mailto:aen@
 - [Charity Fantasy Open 2021](https://fantasy.tabulatron.com)
 - [Lubart Open 2021](https://lubart.tabulatron.com)
 - [Imperial IV 2021](https://iv.imperialdebating.org)
+- [LSE IV 2021](https://lseiv.tabulatron.com)
